@@ -1,4 +1,5 @@
 from django.db import models
+from json import JSONEncoder
 
 
 class Item(models.Model):
@@ -8,3 +9,17 @@ class Item(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Game:
+    def __init__(self, seller, price):
+        self.seller = seller
+        self.price = price
+
+    def __str__(self):
+        return dict(self.seller, self.price)
+
+
+class GameEncoder(JSONEncoder):
+    def default(self, o):
+        return o.__dict__

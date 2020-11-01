@@ -8,39 +8,56 @@
     </head>
 
     <body>
-        <div class="container">
-            <h1>My First Bootstrap Page</h1>
-            <p>This is some text</p>
-            <!--<div class="jumbotron text-center center">-->
-                <!--<form>-->
-                    <!--<input type="text" placeholder="Search..." id="search" style="">-->
-                    <!--<button type="submit"><i class="fa fa-search"></i></button>-->
-                <!--</form>-->
-            <!--</div>-->
+        <div class="container-lg p-3 text-center text-white bg-secondary">
+            <h1 class="display-2">Price Comparison App</h1>
+            <p class="font-weight-bold">
+                This tool searches for games/accessories and their prices on the following websites:
+            </p>
+            <!--<pre><a href="https://www.amazon.co.uk">Amazon</a>      <a href="https://www.ebay.co.uk">Ebay</a></pre>-->
+        </div>
+        <div class="container-lg pt-5 text-center bg-white">
+            <h2 class="display-4">Search Games & Accessories</h2>
+            <input type="text" placeholder="Search..." id="search-term">
+            <button type="button" id="search-button">Search</button>
+        </div>
+
+        <div class="container-lg pt-5 text-center">
+            <table class="table table-striped" id="price-table" hidden>
+                <tr><th>Site</th><th>Price</th></tr>
+            </table>
         </div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-        <!--<script>-->
-            <!--$(".game_details").click(function() {-->
-                <!--let game_title = $(this).text();-->
-                <!--console.log('Title: ' + game_title);-->
+        <script>
+            $("#search-button").click(function() {
+                let search_term = $('#search-term').val();
 
-                <!--$.ajax({-->
-                    <!--url: 'get/game',-->
-                    <!--data: {"game_title": game_title},-->
-                    <!--type: 'GET',-->
-                    <!--success: function(response) {-->
-                        <!--let title = '#' + response.title;-->
-                        <!--let description = "<p>" + response.description + "</p>";-->
-                        <!--let price = "<p>£" + response.price + "</p>";-->
-                        <!--$(title).append("Description: " + description);-->
-                        <!--$(title).append("Price: " + price);-->
-                    <!--},-->
-                    <!--error: function(error) {-->
-                        <!--console.log(error);-->
-                    <!--}-->
-                <!--});-->
-            <!--});-->
-        <!--</script>-->
+                $.ajax({
+                    url: 'search/game',
+                    data: {"search_term": search_term},
+                    type: 'GET',
+                    success: function(response) {
+                        console.log(response);
+                        if($('#price-table tr').length > 1) {
+                            $('#price-table').empty();
+                            $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
+                            $('#price-table').attr("hidden", true);
+                        }
+
+                        $.each(response, function(index, element) {
+                            seller = element.seller;
+                            price = element.price;
+                            $('#price-table').append(
+                                '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>'
+                            );
+                            $('#price-table').removeAttr("hidden");
+                        });
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+            });
+        </script>
     </body>
 </html>
