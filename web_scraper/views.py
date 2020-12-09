@@ -1,10 +1,9 @@
-from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from django.shortcuts import render
-import json
-import requests
 
-from .models import Game, GameEncoder
+from .keyword_mapper import map_id_to_keyword, map_keyword_to_id
+from .recommender_system import find_similar_items_to_target_item
+from .web_scraper import web_scrape
 
 
 def index(request):
@@ -14,83 +13,16 @@ def index(request):
 def search_game(request):
     if request.is_ajax() and request.method == 'GET':
         term = request.GET.get("search_term", None)
-        results = web_scrape(term)
-        return JsonResponse(results, encoder=GameEncoder, safe=False)
+        search_results = web_scrape(term)
+        recommender_results = _recommend_items(term)
+        return JsonResponse({"search_results": search_results, "recommender_results": recommender_results})
 
 
-def web_scrape(search_term):
-    # User Agent List
-    headers = ({
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-        'Accept-Language': 'en-US, en;q=0.5'
-    })
+def _recommend_items(target_item):
+    similar_item_ids = find_similar_items_to_target_item(map_keyword_to_id(target_item))
 
-    formatted_search_term = url_format(search_term)
-    amazon_prices = scrape_amazon(formatted_search_term, headers)
-    ebay_prices = scrape_ebay(formatted_search_term, headers)
-    return amazon_prices + ebay_prices
+    similar_items = list()
+    for item_id in similar_item_ids:
+        similar_items.append(map_id_to_keyword(item_id))
 
-
-def scrape_amazon(search_term, headers):
-    # Fetch the URL for Amazon
-    url = "https://www.amazon.co.uk/s?k=" + search_term + "&i=videogames"
-    amazon_page = requests.get(url, headers=headers)
-
-    # Create the object that will contain all the info in the URL
-    soup = BeautifulSoup(amazon_page.content, features="lxml")
-
-    # Product price without HTML tags or whitespace
-    price = soup.find_all("span", {'class': 'a-offscreen'})[0].get_text().strip().replace("£", "")
-
-    games = [Game("Amazon", price)]
-    return games
-
-
-def scrape_ebay(search_term, headers):
-    # Ebay
-    url = "https://www.ebay.co.uk/sch/i.html?_nkw=" + search_term
-    ebay_page = requests.get(url, headers=headers)
-
-    # Create the object that will contain all the info in the URL
-    soup = BeautifulSoup(ebay_page.content, features="lxml")
-
-    # Product price without HTML tags or whitespace
-    price = soup.find_all("span", {'class': 's-item__price'})[0].get_text().strip().replace("£", "")
-
-    games = [Game("Ebay", price)]
-    return games
-
-    # # Product price with no whitespace or HTML tags
-    # # To prevent script from crashing when the product has no price
-    # try:
-    #     price_text = soup.find(id='priceblock_ourprice').get_text()
-    #     stripped_price = price_text.replace('£', '').replace(',', '').strip()
-    #     price = float(stripped_price)
-    # except price_text is None:
-    #     price = ''
-    # print("Price: ", price)
-    #
-    # # Review score
-    # review_score_element = soup.select('.a-star-4-5')[0].get_text().split(' ')[0]
-    # review_score_stripped = review_score_element.replace(",", ".")
-    # review_score = float(review_score_stripped)
-    # print("Review Score: ", review_score)
-    #
-    # # Review count
-    # review_count_element = soup.select('#acrCustomerReviewText')[0].get_text().split(' ')[0]
-    # review_count_stripped = review_count_element.replace(".", "")
-    # review_count = int(review_count_stripped)
-    # print("Review Count: ", review_count)
-    #
-    # # Check if the product is Out of Stock
-    # try:
-    #     soup.select('#availability .a-color-state')[0].get_text().strip()
-    #     stock = 'Out of Stock'
-    # except:
-    #     stock = 'Available'
-    # print(stock)
-
-
-def url_format(term):
-    return term.replace(" ", "+")
+    return similar_items

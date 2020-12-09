@@ -1,8 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
 
-from .models import Game
-
 
 def web_scrape(search_term):
     # User Agent List
@@ -29,13 +27,13 @@ def _scrape_amazon(search_term, headers):
     # Product price without HTML tags or whitespace
     price = soup.find_all("span", {'class': 'a-offscreen'})[0].get_text().strip().replace("£", "")
 
-    games = [Game("Amazon", price)]
+    games = [{"seller": "Amazon", "price": price}]
     return games
 
 
 def _scrape_ebay(search_term, headers):
     # Ebay
-    url = "https://www.ebay.co.uk/sch/i.html?_nkw=" + search_term
+    url = "https://www.ebay.co.uk/sch/i.html?_nkw=" + search_term + "&sacat=1249"
     ebay_page = requests.get(url, headers=headers)
 
     # Create the object that will contain all the info in the URL
@@ -44,7 +42,7 @@ def _scrape_ebay(search_term, headers):
     # Product price without HTML tags or whitespace
     price = soup.find_all("span", {'class': 's-item__price'})[0].get_text().strip().replace("£", "")
 
-    games = [Game("Ebay", price)]
+    games = [{"seller": "Ebay", "price": price}]
     return games
 
     # # Product price with no whitespace or HTML tags

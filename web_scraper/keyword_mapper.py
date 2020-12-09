@@ -13,7 +13,8 @@ def map_id_to_keyword(item_id):
     print(find_keyword_query)
     cursor.execute(find_keyword_query)
 
-    return cursor.fetchone()
+    rows = cursor.fetchall()
+    return rows[0].keywords
 
 
 def map_keyword_to_id(keyword):

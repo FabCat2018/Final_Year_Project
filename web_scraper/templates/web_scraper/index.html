@@ -4,16 +4,12 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-        <title>Price Comparison Site</title>
+        <title>Video Game Price Comparison Site</title>
     </head>
 
     <body>
         <div class="container-lg p-3 text-center text-white bg-secondary">
-            <h1 class="display-2">Price Comparison App</h1>
-            <p class="font-weight-bold">
-                This tool searches for games/accessories and their prices on the following websites:
-            </p>
-            <!--<pre><a href="https://www.amazon.co.uk">Amazon</a>      <a href="https://www.ebay.co.uk">Ebay</a></pre>-->
+            <h1 class="display-2">Video Game Price Comparison App</h1>
         </div>
         <div class="container-lg pt-5 text-center bg-white">
             <h2 class="display-4">Search Games & Accessories</h2>
@@ -21,11 +17,13 @@
             <button type="button" id="search-button">Search</button>
         </div>
 
-        <div class="container-lg pt-5 text-center">
+        <div class="container-lg pt-5 text-center" id="prices">
             <table class="table table-striped" id="price-table" hidden>
                 <tr><th>Site</th><th>Price</th></tr>
             </table>
         </div>
+
+        <div class="container-lg pt-5 text-center" id="recommendations" hidden></div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
         <script>
@@ -42,16 +40,23 @@
                             $('#price-table').empty();
                             $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
                             $('#price-table').attr("hidden", true);
+                            $('#recommendations').empty();
+                            $('#recommendations').attr("hidden", true);
                         }
 
-                        $.each(response, function(index, element) {
-                            seller = element.seller;
-                            price = element.price;
-                            $('#price-table').append(
-                                '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>'
-                            );
-                            $('#price-table').removeAttr("hidden");
+                        $.each(response['search_results'], function(index, element) {
+                            let seller = element.seller;
+                            let price = element.price;
+                            let result = '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>'
+                            $('#price-table').append(result);
                         });
+                        $('#price-table').removeAttr("hidden");
+
+                        $.each(response['recommender_results'], function(index, element) {
+                            let suggestion = '<p><a href="">' + element + '</a></p><br>';
+                            $('#recommendations').append(suggestion);
+                        });
+                        $('#recommendations').removeAttr("hidden");
                     },
                     error: function(error) {
                         console.log(error);
