@@ -15,15 +15,20 @@
             <h2 class="display-4">Search Games & Accessories</h2>
             <input type="text" placeholder="Search..." id="search-term">
             <button type="button" id="search-button">Search</button>
-        </div>
+        </div><br>
 
         <div class="container-lg pt-5 text-center" id="prices">
+            <h4 class="p-3 mb-2 bg-secondary text-white text-center" id="search-results" hidden>Search Results</h4>
             <table class="table table-striped" id="price-table" hidden>
                 <tr><th>Site</th><th>Price</th></tr>
             </table>
-        </div>
+        </div><br>
 
-        <div class="container-lg pt-5 text-center" id="recommendations" hidden></div>
+        <div class="container-lg pt-5 text-center" id="recommendations" hidden>
+            <h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
+                Recommended Games
+            </h4>
+        </div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
         <script>
@@ -40,8 +45,16 @@
                             $('#price-table').empty();
                             $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
                             $('#price-table').attr("hidden", true);
+                            $('#search-results').attr("hidden", true);
+
+                            let recommendations_title =
+                            `<h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
+                                Recommended Games
+                            </h4>`;
                             $('#recommendations').empty();
+                            $('#recommendations').append(recommendations_title);
                             $('#recommendations').attr("hidden", true);
+                            $('#recommender-results').attr("hidden", true);
                         }
 
                         $.each(response['search_results'], function(index, element) {
@@ -50,12 +63,14 @@
                             let result = '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>'
                             $('#price-table').append(result);
                         });
+                        $('#search-results').removeAttr("hidden");
                         $('#price-table').removeAttr("hidden");
 
                         $.each(response['recommender_results'], function(index, element) {
                             let suggestion = '<p><a href="">' + element + '</a></p><br>';
                             $('#recommendations').append(suggestion);
                         });
+                        $('#recommender-results').removeAttr("hidden");
                         $('#recommendations').removeAttr("hidden");
                     },
                     error: function(error) {
