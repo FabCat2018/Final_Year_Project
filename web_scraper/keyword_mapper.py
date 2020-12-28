@@ -4,11 +4,15 @@ from .db_connector import DatabaseConnector as dbConnector
 def map_id_to_keyword(item_id):
     cursor = dbConnector.setup_db_connection()
 
+    key = item_id
+    if hasattr(item_id, 'item'):
+        key = item_id.item
+
     find_keyword_query = """
         SELECT [keywords]
         FROM [Final Year Project].[dbo].[Item_Id_To_Keywords]
         WHERE [item_id] = '{item_id}'
-    """.format(item_id=item_id['item'])
+    """.format(item_id=key)
 
     print(find_keyword_query)
     cursor.execute(find_keyword_query)

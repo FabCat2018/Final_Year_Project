@@ -5,9 +5,12 @@ import requests
 def web_scrape(search_term):
     # User Agent List
     headers = ({
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-        'Accept-Language': 'en-US, en;q=0.5'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/87.0.4280.101 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,'
+                  'application/signed-exchange;v=b3;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US, en;q=0.9'
     })
 
     formatted_search_term = _url_format(search_term)
@@ -25,7 +28,9 @@ def _scrape_amazon(search_term, headers):
     soup = BeautifulSoup(amazon_page.content, features="lxml")
 
     # Product price without HTML tags or whitespace
-    price = soup.find_all("span", {'class': 'a-offscreen'})[0].get_text().strip().replace("£", "")
+    price_whole = str(soup.find_all("span", {'class': 'a-price-whole'})[0].get_text().strip())
+    price_fraction = str(soup.find_all("span", {'class': 'a-price-fraction'})[0].get_text().strip())
+    price = price_whole + price_fraction
 
     games = [{"seller": "Amazon", "price": price}]
     return games
@@ -40,7 +45,7 @@ def _scrape_ebay(search_term, headers):
     soup = BeautifulSoup(ebay_page.content, features="lxml")
 
     # Product price without HTML tags or whitespace
-    price = soup.find_all("span", {'class': 's-item__price'})[0].get_text().strip().replace("£", "")
+    price = float(soup.find_all("span", {'class': 's-item__price'})[0].get_text().strip().replace("£", ""))
 
     games = [{"seller": "Ebay", "price": price}]
     return games
