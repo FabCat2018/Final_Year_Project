@@ -25,7 +25,7 @@ def find_similar_items_to_target_item(target_item):
     items_with_rank = list()
     for item in unique_items:
         rank = _calculate_item_rank(cursor, item, counter.get(item), users)
-        items_with_rank.append({'item': item, 'rank': rank})
+        items_with_rank.append({'item_id': item, 'rank': rank})
 
     sorted_items_with_rank = sorted(items_with_rank, key=lambda x: x['rank'], reverse=True)
     return sorted_items_with_rank[:7]

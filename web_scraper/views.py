@@ -28,6 +28,10 @@ def _recommend_items(target_item):
 
     similar_items = list()
     for item_id in similar_item_ids:
-        similar_items.append(map_id_to_keyword(item_id))
+        if type(item_id) is str:
+            key_id = item_id
+        else:
+            key_id = item_id['item_id']
+        similar_items.append(map_id_to_keyword(key_id))
 
     return similar_items

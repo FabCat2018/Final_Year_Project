@@ -22,7 +22,7 @@ def store_similar_items():
                    "VALUES('" + str(target_item.item_id) + "'"
 
         for element in similar_items:
-            sql_text += ", '" + str(element['item']) + "'"
+            sql_text += ", '" + str(element['item_id']) + "'"
 
         while len(similar_items) < 7:
             sql_text += ", ''"
