@@ -32,7 +32,47 @@
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
         <script>
-            $("#search-button").click(function() {
+            function hidePreviousPricesAndRecommendations() {
+                $('#price-table').empty();
+                $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
+                $('#price-table').attr("hidden", true);
+                $('#search-results').attr("hidden", true);
+
+                let recommendations_title =
+                    `<h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
+                        Recommended Games
+                    </h4>`;
+                $('#recommendations').empty();
+                $('#recommendations').append(recommendations_title);
+                $('#recommendations').attr("hidden", true);
+                $('#recommender-results').attr("hidden", true);
+            }
+
+            function displayNewPrices(search_results) {
+                $.each(search_results, function(index, element) {
+                    let seller = element.seller;
+                    let price = element.price;
+                    let result = '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>';
+                    $('#price-table').append(result);
+                });
+
+                $('#search-results').removeAttr("hidden");
+                $('#price-table').removeAttr("hidden");
+            }
+
+            function displayNewRecommendations(recommender_results) {
+                $.each(recommender_results, function(index, element) {
+                    let suggestion =
+                        `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
+                    $('#recommendations').append(suggestion);
+                });
+
+                $('#recommender-results').removeAttr("hidden");
+                $('#recommendations').removeAttr("hidden");
+            }
+
+            $("#search-button").click(function(evt) {
+                evt.preventDefault();
                 let search_term = $('#search-term').val();
 
                 $.ajax({
@@ -42,36 +82,37 @@
                     success: function(response) {
                         console.log(response);
                         if($('#price-table tr').length > 1) {
-                            $('#price-table').empty();
-                            $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
-                            $('#price-table').attr("hidden", true);
-                            $('#search-results').attr("hidden", true);
-
-                            let recommendations_title =
-                            `<h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
-                                Recommended Games
-                            </h4>`;
-                            $('#recommendations').empty();
-                            $('#recommendations').append(recommendations_title);
-                            $('#recommendations').attr("hidden", true);
-                            $('#recommender-results').attr("hidden", true);
+                            hidePreviousPricesAndRecommendations();
                         }
 
-                        $.each(response['search_results'], function(index, element) {
-                            let seller = element.seller;
-                            let price = element.price;
-                            let result = '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>'
-                            $('#price-table').append(result);
-                        });
-                        $('#search-results').removeAttr("hidden");
-                        $('#price-table').removeAttr("hidden");
+                        displayNewPrices(response['search_results']);
+                        displayNewRecommendations(response['recommender_results']);
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+            });
 
-                        $.each(response['recommender_results'], function(index, element) {
-                            let suggestion = '<p><a href="">' + element + '</a></p><br>';
-                            $('#recommendations').append(suggestion);
-                        });
-                        $('#recommender-results').removeAttr("hidden");
-                        $('#recommendations').removeAttr("hidden");
+            $("body").on("click", ".recommendation", function(evt) {
+                evt.preventDefault();
+                let game_title = $(this).text();
+                let game_id = $(this).attr("id");
+
+                $('#search-term').val(game_title);
+
+                $.ajax({
+                    url: 'search/game/id',
+                    data: {"game_id": game_id},
+                    type: 'GET',
+                    success: function(response) {
+                        console.log(response);
+                        if($('#price-table tr').length > 1) {
+                            hidePreviousPricesAndRecommendations();
+                        }
+
+                        displayNewPrices(response['search_results']);
+                        displayNewRecommendations(response['recommender_results']);
                     },
                     error: function(error) {
                         console.log(error);
