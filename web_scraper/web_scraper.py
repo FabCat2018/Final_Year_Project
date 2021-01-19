@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import re
 import requests
 
 
@@ -13,15 +14,15 @@ def web_scrape(search_term):
         'Accept-Language': 'en-US, en;q=0.9'
     })
 
-    formatted_search_term = _url_format(search_term)
-    amazon_prices = _scrape_amazon(formatted_search_term, headers)
-    ebay_prices = _scrape_ebay(formatted_search_term, headers)
+    amazon_prices = _scrape_amazon(search_term, headers)
+    ebay_prices = _scrape_ebay(search_term, headers)
     return amazon_prices + ebay_prices
 
 
 def _scrape_amazon(search_term, headers):
     # Fetch the URL for Amazon
-    url = "https://www.amazon.co.uk/s?k=" + search_term + "&i=videogames"
+    formatted_search_term = _url_format(search_term)
+    url = "https://www.amazon.co.uk/s?k=" + formatted_search_term + "&i=videogames"
     amazon_page = requests.get(url, headers=headers)
 
     # Create the object that will contain all the info in the URL
@@ -37,17 +38,46 @@ def _scrape_amazon(search_term, headers):
 
 
 def _scrape_ebay(search_term, headers):
-    # Ebay
-    url = "https://www.ebay.co.uk/sch/i.html?_nkw=" + search_term + "&sacat=1249"
+    # EBay
+    formatted_search_term = _url_format(search_term)
+
+    url = "https://www.ebay.co.uk/sch/i.html?_nkw=" + formatted_search_term + "&_sacat=1249"
     ebay_page = requests.get(url, headers=headers)
 
     # Create the object that will contain all the info in the URL
     soup = BeautifulSoup(ebay_page.content, features="lxml")
 
-    # Product price without HTML tags or whitespace
-    price = float(soup.find_all("span", {'class': 's-item__price'})[0].get_text().strip().replace("£", ""))
+    # Get all products containing the parts of the search term
+    # Setup default games object and empty list for game prices
+    games = [{"seller": "EBay", "price": "N/A"}]
+    relevant_product_prices = list()
 
-    games = [{"seller": "Ebay", "price": price}]
+    # Check if any products are returned and that key_terms are present
+    all_products = soup.select('.srp-results .s-item')
+    if all_products:
+        key_terms = search_term.lower().split(" ")
+        if key_terms:
+            # Iterate through all products to find those with titles containing all key terms
+            for product in all_products:
+                product_title = product.find("h3", {"class": "s-item__title"}).get_text().strip().lower()
+                if _contains_all_terms(product_title, key_terms):
+                    # Append all prices for each relevant item to relevant_product_prices
+                    prices = product.find_all("span", {"class", "s-item__price"})
+                    for price in prices:
+                        product_price = float(re.findall(r"[\d, .]+", price.get_text())[-1])
+                        relevant_product_prices.append(product_price)
+
+            # If there is at least one price in relevant_product_prices find the lowest and return
+            if len(relevant_product_prices) > 0:
+                lowest_price = min(relevant_product_prices)
+                games = [{"seller": "EBay", "price": lowest_price}]
+            else:
+                print("No relevant products found")
+        else:
+            print("Search terms invalid")
+    else:
+        print("No products found for search term")
+
     return games
 
     # # Product price with no whitespace or HTML tags
@@ -79,6 +109,13 @@ def _scrape_ebay(search_term, headers):
     # except:
     #     stock = 'Available'
     # print(stock)
+
+
+def _contains_all_terms(product, key_terms):
+    for term in key_terms:
+        if not product.__contains__(term):
+            return False
+    return True
 
 
 def _url_format(term):
