@@ -28,12 +28,48 @@ def _scrape_amazon(search_term, headers):
     # Create the object that will contain all the info in the URL
     soup = BeautifulSoup(amazon_page.content, features="lxml")
 
-    # Product price without HTML tags or whitespace
-    price_whole = str(soup.find_all("span", {'class': 'a-price-whole'})[0].get_text().strip())
-    price_fraction = str(soup.find_all("span", {'class': 'a-price-fraction'})[0].get_text().strip())
-    price = price_whole + price_fraction
+    # Get all prices on page, to find the lowest, highest and average
+    # Setup default games object and empty list for game prices
+    games = [{"seller": "Amazon", "price": "N/A"}]
+    game_prices = list()
 
-    games = [{"seller": "Amazon", "price": price}]
+    key_terms = search_term.lower().split(" ")
+    # Check search terms are present
+    if key_terms:
+        # Select the upper limit for relevant games on results page
+        section_spans = soup.select("div.a-section.a-spacing-small.a-spacing-top-small span")
+        if section_spans:
+            results_line = section_spans[0].get_text().strip()
+            number_of_results = int(re.findall(r"\d+", results_line)[-1])
+
+            # Get each item on the results page that is not a sponsored item
+            game_info = soup.select(
+                'div[data-component-type="s-search-result"] div span > div.s-include-content-margin',
+                limit=number_of_results)
+            if game_info:
+                # Iterate through all non-sponsored items and find each item whose title matches the keywords
+                for game in game_info:
+                    product_title = game.find("span", {"class": "a-size-medium"}).get_text().strip().lower()
+                    if _contains_all_terms(product_title, key_terms):
+                        # Get prices for each of these items
+                        price_list = game.find_all("span", attrs={'class': 'a-price-whole'})
+                        if price_list:
+                            for price in price_list:
+                                price_whole = str(price.get_text().strip())
+                                price_fraction = str(price.find_next_sibling("span",
+                                                                             attrs={'class': 'a-price-fraction'})
+                                                     .get_text().strip())
+                                game_prices.append(float(price_whole + price_fraction))
+                        else:
+                            print("No price for item")
+            else:
+                print("No games matching result")
+
+    # Extract relevant information from game_prices
+    if len(game_prices) > 0:
+        lowest_price = min(game_prices)
+        games = [{"seller": "Amazon", "price": lowest_price}]
+
     return games
 
 

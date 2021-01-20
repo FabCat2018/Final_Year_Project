@@ -51,8 +51,11 @@
             function displayNewPrices(search_results) {
                 $.each(search_results, function(index, element) {
                     let seller = element.seller;
-                    let price = element.price;
-                    let result = '<tr><td>' + seller + '</td><td>£' + price + '</td></tr>';
+                    let price = "£" + element.price;
+                    if (element.price==="N/A") {
+                        price = element.price;
+                    }
+                    let result = '<tr><td>' + seller + '</td><td>' + price + '</td></tr>';
                     $('#price-table').append(result);
                 });
 
