@@ -20,7 +20,14 @@
         <div class="container-lg pt-5 text-center" id="prices">
             <h4 class="p-3 mb-2 bg-secondary text-white text-center" id="search-results" hidden>Search Results</h4>
             <table class="table table-striped" id="price-table" hidden>
-                <tr><th>Site</th><th>Price</th></tr>
+                <tr>
+                    <th>Site</th>
+                    <th>Lowest Price</th>
+                    <th>Lowest Price + Postage</th>
+                    <th>In Stock</th>
+                    <th>Rating</th>
+                    <th>Web Link</th>
+                </tr>
             </table>
         </div><br>
 
@@ -34,7 +41,16 @@
         <script>
             function hidePreviousPricesAndRecommendations() {
                 $('#price-table').empty();
-                $('#price-table').append('<tr><th>Site</th><th>Price</th></tr>');
+                let tableHeadings =
+                    `<tr>
+                        <th>Site</th>
+                        <th>Lowest Price</th>
+                        <th>Lowest Price + Postage</th>
+                        <th>In Stock</th>
+                        <th>Rating</th>
+                        <th>Web Link</th>
+                    </tr>`
+                $('#price-table').append(tableHeadings);
                 $('#price-table').attr("hidden", true);
                 $('#search-results').attr("hidden", true);
 
@@ -51,11 +67,14 @@
             function displayNewPrices(search_results) {
                 $.each(search_results, function(index, element) {
                     let seller = element.seller;
-                    let price = "£" + element.price;
-                    if (element.price==="N/A") {
-                        price = element.price;
+                    let lowest_price = "£" + element.lowest_price;
+                    let lowest_with_postage = "£" + element.lowest_price_with_postage;
+                    if (element.lowest_price==="N/A") {
+                        lowest_price = element.lowest_price;
+                        lowest_with_postage = "N/A";
                     }
-                    let result = '<tr><td>' + seller + '</td><td>' + price + '</td></tr>';
+                    let result = '<tr><td>' + seller + '</td><td>' + lowest_price + '</td><td>' + lowest_with_postage +
+                        '</td></tr>';
                     $('#price-table').append(result);
                 });
 

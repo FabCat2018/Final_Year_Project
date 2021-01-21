@@ -30,8 +30,9 @@ def _scrape_amazon(search_term, headers):
 
     # Get all prices on page, to find the lowest, highest and average
     # Setup default games object and empty list for game prices
-    games = [{"seller": "Amazon", "price": "N/A"}]
-    game_prices = list()
+    games = [{"seller": "Amazon", "lowest_price": "N/A", "lowest_price_with_postage": "N/A"}]
+    game_base_prices = list()
+    game_prices_with_postage = list()
 
     key_terms = search_term.lower().split(" ")
     # Check search terms are present
@@ -54,21 +55,24 @@ def _scrape_amazon(search_term, headers):
                         # Get prices for each of these items
                         price_list = game.find_all("span", attrs={'class': 'a-price-whole'})
                         if price_list:
-                            for price in price_list:
-                                price_whole = str(price.get_text().strip())
-                                price_fraction = str(price.find_next_sibling("span",
-                                                                             attrs={'class': 'a-price-fraction'})
-                                                     .get_text().strip())
-                                game_prices.append(float(price_whole + price_fraction))
+                            for price_object in price_list:
+                                base_price = _get_product_price_amazon(price_object)
+                                game_base_prices.append(base_price)
+
+                                game_prices_with_postage.append(_get_postage_price_amazon(price_object, base_price))
                         else:
                             print("No price for item")
             else:
                 print("No games matching result")
 
     # Extract relevant information from game_prices
-    if len(game_prices) > 0:
-        lowest_price = min(game_prices)
-        games = [{"seller": "Amazon", "price": lowest_price}]
+    if len(game_base_prices) > 0:
+        lowest_price = min(game_base_prices)
+        lowest_price_with_postage = min(game_prices_with_postage)
+        games = [{
+            "seller": "Amazon", "lowest_price": lowest_price,
+            "lowest_price_with_postage": lowest_price_with_postage
+        }]
 
     return games
 
@@ -87,6 +91,7 @@ def _scrape_ebay(search_term, headers):
     # Setup default games object and empty list for game prices
     games = [{"seller": "EBay", "price": "N/A"}]
     relevant_product_prices = list()
+    relevant_product_prices_with_postage = list()
 
     # Check if any products are returned and that key_terms are present
     all_products = soup.select('.srp-results .s-item')
@@ -97,16 +102,22 @@ def _scrape_ebay(search_term, headers):
             for product in all_products:
                 product_title = product.find("h3", {"class": "s-item__title"}).get_text().strip().lower()
                 if _contains_all_terms(product_title, key_terms):
-                    # Append all prices for each relevant item to relevant_product_prices
                     prices = product.find_all("span", {"class", "s-item__price"})
-                    for price in prices:
-                        product_price = float(re.findall(r"[\d, .]+", price.get_text())[-1])
+                    for price_object in prices:
+                        # Append all prices for each relevant item to relevant_product_prices
+                        product_price = float(re.findall(r"[\d, .]+", price_object.get_text())[-1])
                         relevant_product_prices.append(product_price)
+
+                        # Append all prices including postage for each item to relevant_product_prices_with_postage
+                        postage_price = _get_postage_price_ebay(price_object, product_price)
+                        relevant_product_prices_with_postage.append(postage_price)
 
             # If there is at least one price in relevant_product_prices find the lowest and return
             if len(relevant_product_prices) > 0:
                 lowest_price = min(relevant_product_prices)
-                games = [{"seller": "EBay", "price": lowest_price}]
+                lowest_price_with_postage = min(relevant_product_prices_with_postage)
+                games = [{"seller": "EBay", "lowest_price": lowest_price,
+                          "lowest_price_with_postage": lowest_price_with_postage}]
             else:
                 print("No relevant products found")
         else:
@@ -152,6 +163,37 @@ def _contains_all_terms(product, key_terms):
         if not product.__contains__(term):
             return False
     return True
+
+
+def _get_product_price_amazon(price_object):
+    price_whole = str(price_object.get_text().strip())
+    price_fraction = str(price_object.find_next_sibling("span", attrs={'class': 'a-price-fraction'}).get_text().strip())
+    return float(price_whole + price_fraction)
+
+
+def _get_postage_price_amazon(price_object, base_price):
+    postage_section = price_object.find_parent("div", class_="a-section").find_next_sibling("div")
+    if postage_section:
+        # Checks for 'delivery' keyword, but 'd' may be upper or lowercase. Not a typo.
+        postage = postage_section.select('span[aria-label*="elivery"] span')
+        if postage:
+            postage_price = re.findall(r"[\d, .]+", postage[0].get_text())[-1]
+            try:
+                return base_price + float(postage_price)
+            except ValueError:
+                return base_price
+    return base_price
+
+
+def _get_postage_price_ebay(price_object, product_price):
+    postage_section = price_object.find_parent("div", class_="s-item__info").find(
+        "span", {"class": "s-item__shipping"})
+    postage_price = re.findall(r"[\d, .]+", postage_section.get_text())[-1]
+    try:
+        price_with_postage = product_price + float(postage_price)
+    except ValueError:
+        price_with_postage = product_price
+    return price_with_postage
 
 
 def _url_format(term):
