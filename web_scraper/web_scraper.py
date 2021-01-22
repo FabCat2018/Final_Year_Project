@@ -32,7 +32,8 @@ def _scrape_amazon(search_term, headers):
 
     # Get all prices on page, to find the lowest, highest and average
     # Setup default games object and empty list for game prices
-    games = [{"seller": "Amazon", "price": "N/A", "price_with_postage": "N/A", "rating": "No ratings"}]
+    games = [{"seller": "Amazon", "price": "N/A", "price_with_postage": "N/A", "rating": "No ratings",
+              "in_stock": "Out of Stock", "link": "No link"}]
     relevant_games = list()
 
     key_terms = search_term.lower().split(" ")
@@ -74,7 +75,8 @@ def _scrape_ebay(search_term, headers):
 
     # Get all products containing the parts of the search term
     # Setup default games object and empty list for game prices
-    games = [{"seller": "EBay", "price": "N/A", "price_with_postage": "N/A", "rating": "No ratings"}]
+    games = [{"seller": "EBay", "price": "N/A", "price_with_postage": "N/A", "rating": "No ratings",
+              "in_stock": "Out of Stock", "link": "No link"}]
     relevant_games = list()
 
     # Check if any products are returned and that key_terms are present
@@ -133,11 +135,14 @@ def _find_relevant_games_amazon(game_info, key_terms, relevant_games):
                     base_price = _get_product_price_amazon(price_object)
                     price_with_postage = _get_postage_price_amazon(price_object, base_price)
                     rating = _get_rating_amazon(price_object)
+                    web_link = _get_web_link_amazon(price_object)
 
                     relevant_games.append({
                         "base_price": base_price,
                         "price_with_postage": price_with_postage,
-                        "rating": rating
+                        "rating": rating,
+                        "in_stock": "In Stock",
+                        "web_link": web_link
                     })
             else:
                 print("No price for item")
@@ -170,13 +175,28 @@ def _get_postage_price_amazon(price_object, base_price):
 def _get_rating_amazon(price_object):
     rating_section = price_object.find_parent("div", class_="sg-row").find_previous_sibling("div")
     if rating_section:
-        try:
-            # Checks for 'stars' keyword
-            rating = rating_section.select('span[aria-label*="stars"] span.a-icon-alt')[0].get_text().strip()
-            return rating
-        except ValueError:
-            return "No rating"
+        rating = rating_section.select('span[aria-label*="stars"] span.a-icon-alt')
+        if rating:
+            try:
+                # Checks for 'stars' keyword
+                rating_value = rating[0].get_text().strip()
+                return rating_value
+            except ValueError:
+                return "No rating"
     return "No rating"
+
+
+# Gets the link to the item page for a specific item on EBay page
+def _get_web_link_amazon(price_object):
+    title_section = price_object.find_parent("div", class_="sg-row").find_previous_sibling("div")
+    if title_section:
+        try:
+            # Find anchor tag containing URL
+            web_link = title_section.find("a", {"class": "a-link-normal"})['href']
+            return "https://www.amazon.co.uk" + web_link
+        except ValueError:
+            return "No link"
+    return "No link"
 
 
 # EBay-specific methods
@@ -192,11 +212,14 @@ def _find_relevant_games_ebay(all_products, key_terms, relevant_games):
                 base_price = float(re.findall(r"[\d, .]+", price_object.get_text())[-1])
                 price_with_postage = _get_postage_price_ebay(price_object, base_price)
                 rating = _get_rating_ebay(price_object)
+                web_link = _get_web_link_ebay(price_object)
 
                 relevant_games.append({
                     "base_price": base_price,
                     "price_with_postage": price_with_postage,
-                    "rating": rating
+                    "rating": rating,
+                    "in_stock": "In Stock",
+                    "web_link": web_link
                 })
     return relevant_games
 
@@ -226,6 +249,19 @@ def _get_rating_ebay(price_object):
     return "No ratings"
 
 
+# Gets the link to the item page for a specific item on EBay page
+def _get_web_link_ebay(price_object):
+    title_section = price_object.find_parent("div", class_="s-item__info")
+    if title_section:
+        try:
+            # Find anchor tag containing URL
+            web_link = title_section.find("a", {"class": "s-item__link"})['href']
+            return web_link
+        except ValueError:
+            return "No link"
+    return "No link"
+
+
 # Helper Methods
 
 # Checks that all terms are present in the product name
@@ -246,13 +282,17 @@ def _find_lowest_games(relevant_games, seller):
             "seller": seller,
             "price": lowest_by_base_price['base_price'],
             "price_with_postage": lowest_by_base_price['price_with_postage'],
-            "rating": lowest_by_base_price['rating']
+            "rating": lowest_by_base_price['rating'],
+            "in_stock": lowest_by_base_price['in_stock'],
+            "link": lowest_by_base_price['web_link']
         },
         {
             "seller": seller,
             "price": lowest_by_price_with_postage['base_price'],
             "price_with_postage": lowest_by_price_with_postage['price_with_postage'],
-            "rating": lowest_by_price_with_postage['rating']
+            "rating": lowest_by_price_with_postage['rating'],
+            "in_stock": lowest_by_price_with_postage['in_stock'],
+            "link": lowest_by_price_with_postage['web_link']
         }
     ]
     return games

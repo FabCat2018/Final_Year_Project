@@ -26,7 +26,7 @@
                     <th>Price + Postage</th>
                     <th>Rating</th>
                     <th>In Stock</th>
-                    <th>Web Link</th>
+                    <th>Link</th>
                 </tr>
             </table>
         </div><br>
@@ -48,7 +48,7 @@
                         <th>Price + Postage</th>
                         <th>Rating</th>
                         <th>In Stock</th>
-                        <th>Web Link</th>
+                        <th>Link</th>
                     </tr>`
                 $('#price-table').append(tableHeadings);
                 $('#price-table').attr("hidden", true);
@@ -70,12 +70,24 @@
                     let price = "£" + element.price;
                     let price_with_postage = "£" + element.price_with_postage;
                     let rating = element.rating;
+                    let in_stock = element.in_stock;
+                    let link = '<a href=${element.link} rel="noopener noreferrer" target="_blank">Product Link</a>';
+
                     if (element.price==="N/A") {
                         price = element.price;
                         price_with_postage = "N/A";
+                        link = "No link";
                     }
-                    let result = '<tr><td>' + seller + '</td><td>' + price + '</td><td>' + price_with_postage +
-                        '</td><td>' + rating + '</td></tr>';
+
+                    let result =
+                        `<tr>
+                            <td>${seller}</td>
+                            <td>${price}</td>
+                            <td>${price_with_postage}</td>
+                            <td>${rating}</td>
+                            <td>${in_stock}</td>
+                            <td>${link}</td>
+                        </tr>`;
                     $('#price-table').append(result);
                 });
 
