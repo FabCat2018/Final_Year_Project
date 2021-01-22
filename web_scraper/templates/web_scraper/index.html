@@ -24,8 +24,8 @@
                     <th>Site</th>
                     <th>Price</th>
                     <th>Price + Postage</th>
-                    <th>In Stock</th>
                     <th>Rating</th>
+                    <th>In Stock</th>
                     <th>Web Link</th>
                 </tr>
             </table>
@@ -46,8 +46,8 @@
                         <th>Site</th>
                         <th>Price</th>
                         <th>Price + Postage</th>
-                        <th>In Stock</th>
                         <th>Rating</th>
+                        <th>In Stock</th>
                         <th>Web Link</th>
                     </tr>`
                 $('#price-table').append(tableHeadings);
@@ -69,12 +69,13 @@
                     let seller = element.seller;
                     let price = "£" + element.price;
                     let price_with_postage = "£" + element.price_with_postage;
+                    let rating = element.rating;
                     if (element.price==="N/A") {
                         price = element.price;
                         price_with_postage = "N/A";
                     }
                     let result = '<tr><td>' + seller + '</td><td>' + price + '</td><td>' + price_with_postage +
-                        '</td></tr>';
+                        '</td><td>' + rating + '</td></tr>';
                     $('#price-table').append(result);
                 });
 
