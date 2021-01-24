@@ -67,11 +67,11 @@
             function displayNewPrices(search_results) {
                 $.each(search_results, function(index, element) {
                     let seller = element.seller;
-                    let price = "£" + element.price;
-                    let price_with_postage = "£" + element.price_with_postage;
+                    let price = "£" + (Math.round(element.price * 100) / 100).toFixed(2);
+                    let price_with_postage = "£" + (Math.round(element.price_with_postage * 100) / 100).toFixed(2);
                     let rating = element.rating;
                     let in_stock = element.in_stock;
-                    let link = '<a href=${element.link} rel="noopener noreferrer" target="_blank">Product Link</a>';
+                    let link = `<a href="${element.link}" rel="noopener noreferrer" target="_blank">Product Link</a>`;
 
                     if (element.price==="N/A") {
                         price = element.price;
