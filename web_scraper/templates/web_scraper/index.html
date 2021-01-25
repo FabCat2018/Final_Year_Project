@@ -96,6 +96,10 @@
             }
 
             function displayNewRecommendations(recommender_results) {
+                if (recommender_results.length < 1) {
+                    $('#recommendations').append('<p>No recommendations for this item.</p>');
+                }
+
                 $.each(recommender_results, function(index, element) {
                     let suggestion =
                         `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;

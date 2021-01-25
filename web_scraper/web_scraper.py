@@ -151,7 +151,7 @@ def _find_relevant_games_amazon(game_info, key_terms, relevant_games):
 
 # Gets the price for a specific item on Amazon
 def _get_product_price_amazon(price_object):
-    price_whole = str(price_object.get_text().strip())
+    price_whole = str(price_object.get_text().replace(",", "").strip())
     price_fraction = str(price_object.find_next_sibling("span", attrs={'class': 'a-price-fraction'}).get_text().strip())
     return float(price_whole + price_fraction)
 
@@ -204,23 +204,26 @@ def _get_web_link_amazon(price_object):
 # Finds games matching key_terms on EBay page
 def _find_relevant_games_ebay(all_products, key_terms, relevant_games):
     for product in all_products:
-        product_title = product.find("h3", {"class": "s-item__title"}).get_text().strip().lower()
-        if _contains_all_terms(product_title, key_terms):
-            prices = product.find_all("span", {"class", "s-item__price"})
-            for price_object in prices:
-                # Get base price and price + postage for each of these products
-                base_price = float(re.findall(r"[\d, .]+", price_object.get_text())[-1])
-                price_with_postage = _get_postage_price_ebay(price_object, base_price)
-                rating = _get_rating_ebay(price_object)
-                web_link = _get_web_link_ebay(price_object)
+        try:
+            product_title = product.find("h3", {"class": "s-item__title"}).get_text().strip().lower()
+            if _contains_all_terms(product_title, key_terms):
+                prices = product.find_all("span", {"class", "s-item__price"})
+                for price_object in prices:
+                    # Get base price and price + postage for each of these products
+                    base_price = float(re.findall(r"[\d, .]+", price_object.get_text().replace(",", ""))[-1])
+                    price_with_postage = _get_postage_price_ebay(price_object, base_price)
+                    rating = _get_rating_ebay(price_object)
+                    web_link = _get_web_link_ebay(price_object)
 
-                relevant_games.append({
-                    "base_price": base_price,
-                    "price_with_postage": price_with_postage,
-                    "rating": rating,
-                    "in_stock": "In Stock",
-                    "web_link": web_link
-                })
+                    relevant_games.append({
+                        "base_price": base_price,
+                        "price_with_postage": price_with_postage,
+                        "rating": rating,
+                        "in_stock": "In Stock",
+                        "web_link": web_link
+                    })
+        except AttributeError:
+            print("Item has no title")
     return relevant_games
 
 

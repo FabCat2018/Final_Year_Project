@@ -34,8 +34,8 @@ def map_keyword_to_id(keyword):
 
     row_count = len(rows)
     if row_count > 1:
-        raise Exception("Too many matching items")
+        print("Too many matching items")
     elif row_count < 1:
-        raise Exception("No matching items")
+        print("No matching items")
     else:
         return rows[0].item_id
