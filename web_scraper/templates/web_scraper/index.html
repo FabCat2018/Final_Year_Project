@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
         <title>Video Game Price Comparison Site</title>
     </head>
 
@@ -37,8 +38,10 @@
             </h4>
         </div>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
         <script>
+            // Helper Functions
             function hidePreviousPricesAndRecommendations() {
                 $('#price-table').empty();
                 let tableHeadings =
@@ -110,12 +113,20 @@
                 $('#recommendations').removeAttr("hidden");
             }
 
+            // Search Functions
+            $(function() {
+                $("#search-term").autocomplete({
+                    source: '{% url "get_search_suggestions" %}',
+                    minLength: 3,
+                });
+            });
+
             $("#search-button").click(function(evt) {
                 evt.preventDefault();
                 let search_term = $('#search-term').val();
 
                 $.ajax({
-                    url: 'search/game',
+                    url: '{% url "search_game_by_keyword" %}',
                     data: {"search_term": search_term},
                     type: 'GET',
                     success: function(response) {
@@ -133,6 +144,7 @@
                 });
             });
 
+            // Recommendation Functions
             $("body").on("click", ".recommendation", function(evt) {
                 evt.preventDefault();
                 let game_title = $(this).text();
@@ -141,7 +153,7 @@
                 $('#search-term').val(game_title);
 
                 $.ajax({
-                    url: 'search/game/id',
+                    url: '{% url "search_game_by_id" %}',
                     data: {"game_id": game_id},
                     type: 'GET',
                     success: function(response) {

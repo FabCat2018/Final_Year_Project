@@ -1,6 +1,9 @@
+import re
+
 from django.http import JsonResponse
 from django.shortcuts import render
 
+from .db_connector import DatabaseConnector as dbConnector
 from .get_stored_similar_items import get_similar_items
 from .keyword_mapper import map_id_to_keyword, map_keyword_to_id
 from .recommender_system import find_similar_items_to_target_item
@@ -11,7 +14,28 @@ def index(request):
     return render(request, 'web_scraper/index.html')
 
 
-def search_game(request):
+def get_search_suggestions(request):
+    if request.is_ajax() and request.method == 'GET' and 'term' in request.GET:
+        cursor = dbConnector.setup_db_connection()
+        search_term = request.GET['term']
+        escaped_search_term = re.sub(r"['\"]+", "", search_term)
+
+        get_matching_item_keywords_query = """
+            SELECT [keywords]
+            FROM [Final Year Project].[dbo].[Item_Id_To_Keywords]
+            WHERE [keywords] LIKE '%{term}%'
+        """.format(term=escaped_search_term)
+        print(get_matching_item_keywords_query)
+        cursor.execute(get_matching_item_keywords_query)
+
+        search_suggestions = list()
+        for keyword in cursor.fetchall():
+            search_suggestions.append(keyword.keywords)
+
+        return JsonResponse(search_suggestions, safe=False)
+
+
+def search_game_by_keyword(request):
     if request.is_ajax() and request.method == 'GET':
         term = request.GET.get("search_term", None)
         search_results = web_scrape(term)
