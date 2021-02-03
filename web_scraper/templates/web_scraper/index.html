@@ -118,6 +118,28 @@
                 $("#search-term").autocomplete({
                     source: '{% url "get_search_suggestions" %}',
                     minLength: 3,
+                    select: function(event, ui) {
+                        event.preventDefault();
+                        $("#search-term").val(ui.item.label);
+
+                        $.ajax({
+                            url: '{% url "search_game_by_id" %}',
+                            data: {"game_id": ui.item.value},
+                            type: 'GET',
+                            success: function(response) {
+                                console.log(response);
+                                if($('#price-table tr').length > 1) {
+                                    hidePreviousPricesAndRecommendations();
+                                }
+
+                                displayNewPrices(response['search_results']);
+                                displayNewRecommendations(response['recommender_results']);
+                            },
+                            error: function(error) {
+                                console.log(error);
+                            }
+                        });
+                    },
                 });
             });
 

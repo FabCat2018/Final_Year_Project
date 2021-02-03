@@ -21,7 +21,7 @@ def get_search_suggestions(request):
         escaped_search_term = re.sub(r"['\"]+", "", search_term)
 
         get_matching_item_keywords_query = """
-            SELECT [keywords]
+            SELECT [item_id], [keywords]
             FROM [Final Year Project].[dbo].[Item_Id_To_Keywords]
             WHERE [keywords] LIKE '%{term}%'
         """.format(term=escaped_search_term)
@@ -29,8 +29,8 @@ def get_search_suggestions(request):
         cursor.execute(get_matching_item_keywords_query)
 
         search_suggestions = list()
-        for keyword in cursor.fetchall():
-            search_suggestions.append(keyword.keywords)
+        for element in cursor.fetchall():
+            search_suggestions.append({"label": element.keywords, "value": element.item_id})
 
         return JsonResponse(search_suggestions, safe=False)
 
