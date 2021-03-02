@@ -21,25 +21,19 @@ class DatabaseConnector:
 def build_user_item_matrix(target_item):
     cursor = DatabaseConnector.setup_db_connection()
     user_ids = _find_users_who_rated_target_item(cursor, target_item)
-    # print(user_ids)
 
     database_results = list()
     for user in user_ids:
         database_results.extend(_find_items_rated_by_user(cursor, user))
-    # print(database_results)
 
     results_dataframe = pd.DataFrame(data=database_results, columns=['user_id', 'item_id', 'rating'])
-    # print(results_dataframe)
 
     user_item_matrix = results_dataframe.pivot_table(index='item_id', columns='user_id', values='rating', fill_value=0)
-    # print(user_item_matrix)
     return user_item_matrix
 
 
 # Collate items from each of k users which target_user has not yet selected and determine (up to) highest 7 to recommend
-def recommend_items_for_target_item():
-    target_item = 'B00002ST4Y'
-
+def recommend_items_for_target_item(target_item):
     # Create user_item pivot table, getting first user as target_user
     user_item_matrix = build_user_item_matrix(target_item)
     target_user_name = user_item_matrix.iloc[:, 0].name
@@ -50,23 +44,25 @@ def recommend_items_for_target_item():
     # Normalise user_item pivot_table
     normalised_user_item_matrix = _normalisation(user_item_matrix)
 
-    # If less than 5 similar users, use all for recommendations, else take most similar 5
-    if len(similarity_matrix.columns) <= 5:
-        possible_recommendations = user_item_matrix[user_item_matrix[target_user_name] == 0].index.values
+    # If more than 5 similar users, take most similar 5
+    if len(similarity_matrix.columns) > 5:
+        most_similar_users = _find_5_most_similar_users_to_target_user(similarity_matrix, target_user_name)
+    else:
+        most_similar_users = user_item_matrix
 
-        # Get normalised ratings for each similar user
-        neighbour_rating = normalised_user_item_matrix.loc[possible_recommendations][user_item_matrix.columns.values]
-        neighbour_similarity = similarity_matrix.loc[target_user_name].loc[user_item_matrix.columns.values]
+    # Find items which target_user has not rated yet
+    possible_recommendations = user_item_matrix[user_item_matrix[target_user_name] == 0].index.values
 
-        item_scores = _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name)
-        print(item_scores)
+    # Get normalised ratings for each similar user, as well as each user's similarity to target_user
+    neighbour_rating = normalised_user_item_matrix.loc[possible_recommendations][most_similar_users]
+    neighbour_similarity = similarity_matrix.loc[target_user_name].loc[most_similar_users]
 
-        recommended_items = _get_top_7_items_by_score(item_scores)
-        print(recommended_items)
-        return recommended_items
-    # else:
-    #     # Do something else
-    #     return
+    # Score items
+    item_scores = _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name)
+
+    # Get up to top 7 items by score
+    recommended_items = _get_top_7_items_by_score(item_scores)
+    return recommended_items
 
 
 # region Private Functions
@@ -78,7 +74,7 @@ def _find_users_who_rated_target_item(cursor, target_item):
         FROM [Final Year Project].[dbo].[Amazon_Video_Games_Ratings_Subset]
         WHERE [item_id] = '{target_item}'
     """.format(target_item=target_item)
-    # print(get_users_for_item_query)
+    print(get_users_for_item_query)
     cursor.execute(get_users_for_item_query)
 
     user_ids = list()
@@ -94,7 +90,7 @@ def _find_items_rated_by_user(cursor, user):
         FROM [Final Year Project].[dbo].[Amazon_Video_Games_Ratings_Subset]
         WHERE [user_id] = '{user}' 
     """.format(user=user)
-    # print(get_items_for_user_query)
+    print(get_items_for_user_query)
     cursor.execute(get_items_for_user_query)
 
     results = list()
@@ -113,6 +109,12 @@ def _calculate_pearson_similarity_for_matrix(matrix):
     return matrix.corr(method="pearson")
 
 
+def _find_5_most_similar_users_to_target_user(similarity_matrix, target_user_name):
+    all_similar_users = similarity_matrix.drop([target_user_name], axis=0)
+    five_most_similar_users = all_similar_users.nlargest(5, [target_user_name])
+    return five_most_similar_users.index.values
+
+
 def _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name):
     active_user_mean_rating = np.mean(user_item_matrix.loc[:, target_user_name])
     neighbour_rating_transpose = neighbour_rating.transpose()
@@ -129,8 +131,4 @@ def _get_top_7_items_by_score(item_scores):
         sorted_scores = item_scores.transpose().nlargest(7, [0])
         return sorted_scores.transpose().columns.values
 
-
 # endregion
-
-
-recommend_items_for_target_item()
