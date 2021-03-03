@@ -64,10 +64,6 @@ def _recommend_items_from_id(target_item_id):
 
     similar_items = list()
     for item_id in similar_item_ids:
-        if type(item_id) is str:
-            key_id = item_id
-        else:
-            key_id = item_id['item_id']
-        similar_items.append({'name': map_id_to_keyword(key_id), 'id': key_id})
+        similar_items.append({'name': map_id_to_keyword(item_id), 'id': item_id})
 
     return similar_items
