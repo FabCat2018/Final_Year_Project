@@ -131,7 +131,8 @@ def recommend_items_for_target_item_mf(target_item):
 
 # Locate target_user in user_item_matrix
 def _get_target_user(user_item_matrix):
-    return user_item_matrix.columns.values[0]
+    unrated_items_for_users = user_item_matrix[user_item_matrix == 0].count(axis=0)
+    return unrated_items_for_users.nlargest(1, 'first').index.values[0]
 
 
 # Calculate predictions for ratings for every user-item pair and return matrix
