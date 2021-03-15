@@ -12,7 +12,18 @@ def recommend_items_for_target_item_cf(target_item):
     # Create user_item pivot table, getting first user as target_user
     user_item_matrix = build_user_item_matrix(target_item)
     target_user_name = user_item_matrix.iloc[:, 0].name
+    return _recommend_top_7_items_for_users(user_item_matrix, target_user_name)
 
+
+# Recommend up to 7 items based on score
+def _recommend_top_7_items_for_users(user_item_matrix, target_user_name):
+    item_scores = _score_items_for_target_user_cf(user_item_matrix, target_user_name)
+    recommended_items = _get_top_7_items_by_score(item_scores)
+    return recommended_items
+
+
+# Score items for a target_user
+def _score_items_for_target_user_cf(user_item_matrix, target_user_name):
     # Calculate similarity for each user
     similarity_matrix = _calculate_pearson_similarity_for_matrix(user_item_matrix)
 
@@ -20,8 +31,8 @@ def recommend_items_for_target_item_cf(target_item):
     normalised_user_item_matrix = _normalisation(user_item_matrix)
 
     # If more than 5 similar users, take most similar 5
-    if len(similarity_matrix.columns) > 5:
-        most_similar_users = _find_5_most_similar_users_to_target_user(similarity_matrix, target_user_name)
+    if len(similarity_matrix.columns) > 20:
+        most_similar_users = _find_20_most_similar_users_to_target_user(similarity_matrix, target_user_name)
     else:
         most_similar_users = user_item_matrix
 
@@ -34,13 +45,10 @@ def recommend_items_for_target_item_cf(target_item):
 
     # Score items
     item_scores = _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name)
-
-    # Get up to top 7 items by score
-    recommended_items = _get_top_7_items_by_score(item_scores)
-    return recommended_items
+    return item_scores
 
 
-# region Private Functions
+# region Private Helper Functions
 
 # Adjust ratings by each user's average rating
 def _normalisation(matrix):
@@ -52,10 +60,10 @@ def _calculate_pearson_similarity_for_matrix(matrix):
     return matrix.corr(method="pearson")
 
 
-def _find_5_most_similar_users_to_target_user(similarity_matrix, target_user_name):
+def _find_20_most_similar_users_to_target_user(similarity_matrix, target_user_name):
     all_similar_users = similarity_matrix.drop([target_user_name], axis=0)
-    five_most_similar_users = all_similar_users.nlargest(5, [target_user_name])
-    return five_most_similar_users.index.values
+    twenty_most_similar_users = all_similar_users.nlargest(20, [target_user_name])
+    return twenty_most_similar_users.index.values
 
 
 def _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name):

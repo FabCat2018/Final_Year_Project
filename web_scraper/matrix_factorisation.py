@@ -63,8 +63,8 @@ class MF:
             self.sgd()
             mse = self.mse()
             training_process.append((i, mse))
-            if (i + 1) % 10 == 0:
-                print("Iteration: %d ; error = %.4f" % (i + 1, mse))
+            # if (i + 1) % 10 == 0:
+            #     print("Iteration: %d ; error = %.4f" % (i + 1, mse))
 
         return training_process
 
@@ -142,15 +142,6 @@ def _get_item_rating_predictions(user_item_matrix):
     predicted_user_item_matrix = pd.DataFrame(data=mf.full_matrix(), index=user_item_matrix.columns.values,
                                               columns=user_item_matrix.index.values).transpose()
     return predicted_user_item_matrix
-
-    # x = [x for x, y in training_process]
-    # y = [y for x, y in training_process]
-    # plt.figure(figsize=(16, 4))
-    # plt.plot(x, y)
-    # plt.xticks(x, x)
-    # plt.xlabel("Iterations")
-    # plt.ylabel("Mean Square Error")
-    # plt.grid(axis=y)
 
 
 # Find up to highest 7 scoring items for target_user
