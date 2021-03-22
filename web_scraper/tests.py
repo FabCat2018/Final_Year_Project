@@ -31,7 +31,6 @@ class ProjectTests(unittest.TestCase):
     # Open browser
     def setUp(self):
         self.driver = Chrome(os.path.join(os.environ['HOMEPATH'], 'Desktop/chromedriver.exe'))
-        # self.driver.implicitly_wait(5)
         self.driver.maximize_window()
         self.driver.get("http://127.0.0.1:8000/")
 
