@@ -8,8 +8,8 @@ import os
 import unittest
 
 from .user_item_matrix_creator import build_user_item_matrix
-from .matrix_factorisation import _get_item_rating_predictions as mf
-from .user_based_collaborative_filtering import _normalisation, _score_items_for_target_user_cf as cf
+from .matrix_factorisation import _get_item_rating_predictions as mf_predict, _predict_item_ratings as mf
+from .user_based_collaborative_filtering import _normalisation, _score_items_for_target_user_cf as cf_predict
 
 
 # region Nested Class
@@ -191,6 +191,108 @@ class RecommenderSystemTests(unittest.TestCase):
         for i in range(len(self.test_users)):
             self._compare_recommender_systems(test_users[i], self.target_item, self.user_item_matrix, user_texts[i])
 
+    def test_mf_optimisations(self):
+        user_item_matrix = self.user_item_matrix.copy()
+        latent_dimensions = 2
+        learning_rate = 0.1
+        regularisation_parameter = 0.01
+        iterations = 30
+        error = "mse"
+
+        for user in self.test_users:
+            # Remove and store rating for test_user and target_item
+            original_rating = user_item_matrix.loc[self.target_item].loc[user]
+            user_item_matrix.loc[self.target_item].loc[user] = 0
+
+            print("User: ", user, "\tOriginal Rating: ", original_rating)
+
+            # Get predictions for target_item with differing values for MF
+
+            # Across first five users, only latent dimension of 2 returns values
+
+            for i in range(5):
+                dimensions = latent_dimensions + i
+                mf_rating_prediction = mf(user_item_matrix, dimensions, learning_rate, regularisation_parameter,
+                                          iterations, error).loc[self.target_item].loc[user]
+                print(dimensions, " latent dimensions", "\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            # Learning rate of 0.1 performs best out of first attempts
+
+            for i in range(5):
+                rate = learning_rate * i
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, rate, regularisation_parameter,
+                                          iterations, error).loc[self.target_item].loc[user]
+                print("Learning rate: ", rate, "\tMF Rating Prediction: ", mf_rating_prediction, "\tDifference: ",
+                      abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            # Regularisation parameter of 0.02 performs best overall
+
+            for i in range(5):
+                regularisation = regularisation_parameter * i
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation,
+                                          iterations, error).loc[self.target_item].loc[user]
+                print("Regularisation parameter: ", regularisation, "\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            # Values between 32 and 34 perform best for iterations, but will check 20 to 39
+
+            for i in range(5):
+                new_iterations = iterations + (i * 2)
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter,
+                                          new_iterations, error).loc[self.target_item].loc[user]
+                print("Iterations: ", new_iterations, "\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            # Exactly 0.1 for learning rate gives most accurate predictions
+
+            for i in range(10):
+                new_learning_rate = 0.1 + (i / 100)
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, new_learning_rate, regularisation_parameter,
+                                          iterations, error).loc[self.target_item].loc[user]
+                print("Learning Rate: ", new_learning_rate, "\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            # Results are: 21, 26, 32, 37, 21. Mean is 27, so will use 27 iterations.
+
+            for i in range(20):
+                new_iterations = 20 + i
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter,
+                                          new_iterations, error).loc[self.target_item].loc[user]
+                print("Iterations: ", new_iterations, "\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            #  RMSE appears to perform better overall
+
+            for i in range(3):
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate,
+                                          regularisation_parameter, iterations, error).loc[self.target_item].loc[user]
+                print("MSE \tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
+            for i in range(3):
+                error = "rmse"
+                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate,
+                                          regularisation_parameter, iterations, error).loc[self.target_item].loc[user]
+                print("RMSE\tMF Rating Prediction: ", mf_rating_prediction,
+                      "\tDifference: ", abs(original_rating - mf_rating_prediction))
+
+            print()
+
     # region Private Functions
 
     # Retrieve num_users which are evenly spaced throughout all users sorted by number of unrated items,
@@ -216,8 +318,8 @@ class RecommenderSystemTests(unittest.TestCase):
         user_item_matrix.loc[target_item].loc[test_user] = 0
 
         # Get predictions for rating
-        mf_rating_prediction = mf(user_item_matrix).loc[target_item].loc[test_user]
-        cf_rating_prediction = cf(user_item_matrix, test_user).transpose().loc[target_item][0]
+        mf_rating_prediction = mf_predict(user_item_matrix, "rmse").loc[target_item].loc[test_user]
+        cf_rating_prediction = cf_predict(user_item_matrix, test_user).transpose().loc[target_item][0]
 
         print(user_text, " rating user")
         print("Actual: ", original_rating, "\tMF Prediction: ", mf_rating_prediction, "\tDifference: ",
@@ -225,24 +327,5 @@ class RecommenderSystemTests(unittest.TestCase):
         print("Adjusted item rating: ", adjusted_target_item_rating, "\tCF Prediction: ", cf_rating_prediction,
               "\tDifference: ", abs(adjusted_target_item_rating - cf_rating_prediction))
         print("\n")
-
-    # @staticmethod
-    # def _get_item_count_for_users():
-    #     cursor = DatabaseConnector.setup_db_connection()
-    #     get_item_count_for_users_query = """
-    #         SELECT [user_id], COUNT(*) [item_id]
-    #         FROM [Final Year Project].[dbo].[Amazon_Video_Games_Ratings_Subset]
-    #         GROUP BY [user_id]
-    #         ORDER BY [item_id] DESC
-    #     """
-    #     cursor.execute(get_item_count_for_users_query)
-    #
-    #     user_item_count_list = list()
-    #     for row in cursor.fetchall():
-    #         user_item_count_list.append({"user_id": row.user_id, "item_count": row.item_id})
-    #
-    #     test_users = list()
-    #     test_users.append(user_item_count_list[0]["user_id"])
-    #     return user_item_count_list
 
     # endregion

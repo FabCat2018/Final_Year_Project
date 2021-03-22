@@ -3,26 +3,22 @@ import pandas as pd
 from .user_item_matrix_creator import build_user_item_matrix
 
 
-# Adapted from tutorial at:
+# MF class adapted from tutorial at:
 # https://albertauyeung.github.io/2017/04/23/python-matrix-factorization.html
 
 class MF:
 
-    def __init__(self, user_item_matrix, latent_dimensions, alpha, beta, iterations):
+    def __init__(self, user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter, iterations):
         """
         Perform matrix factorization to predict empty
         entries in a matrix.
-
-        Arguments
-        - alpha (float) : learning rate
-        - beta (float)  : regularization parameter
         """
 
         self.user_item_matrix = user_item_matrix
         self.num_users, self.num_items = user_item_matrix.shape
         self.latent_dimensions = latent_dimensions
-        self.alpha = alpha
-        self.beta = beta
+        self.learning_rate = learning_rate
+        self.regularisation_parameter = regularisation_parameter
         self.iterations = iterations
 
         self.user_latent_feature_matrix = np.random.normal()
@@ -32,7 +28,7 @@ class MF:
         self.global_bias = np.random.normal()
         self.samples = []
 
-    def train(self):
+    def train(self, error_method):
         # Initialise user and item latent feature matrices
         self.user_latent_feature_matrix = np.random.normal(
             scale=1. / self.latent_dimensions,
@@ -61,8 +57,14 @@ class MF:
         for i in range(self.iterations):
             np.random.shuffle(self.samples)
             self.sgd()
-            mse = self.mse()
-            training_process.append((i, mse))
+
+            # Toggle mse and rmse for testing purposes
+            if error_method == "rmse":
+                error = self.rmse()
+            else:
+                error = self.mse()
+
+            training_process.append((i, error))
             # if (i + 1) % 10 == 0:
             #     print("Iteration: %d ; error = %.4f" % (i + 1, mse))
 
@@ -79,6 +81,18 @@ class MF:
             error += pow(self.user_item_matrix[x, y] - predicted[x, y], 2)
         return np.sqrt(error)
 
+    # Method not from tutorial, my own work
+    def rmse(self):
+        """
+        A function to compute the total root mean square error
+        """
+        xs, ys = self.user_item_matrix.nonzero()
+        predicted = self.full_matrix()
+        errors = list()
+        for x, y in zip(xs, ys):
+            errors.append(pow(self.user_item_matrix[x, y] - predicted[x, y], 2))
+        return np.sqrt(np.mean(errors))
+
     def sgd(self):
         """
         Perform stochastic gradient descent
@@ -89,17 +103,19 @@ class MF:
             e = (r - prediction)
 
             # Update biases
-            self.user_bias[i] += self.alpha * (e - self.beta * self.user_bias[i])
-            self.item_bias[j] += self.alpha * (e - self.beta * self.item_bias[j])
+            self.user_bias[i] += self.learning_rate * (e - self.regularisation_parameter * self.user_bias[i])
+            self.item_bias[j] += self.learning_rate * (e - self.regularisation_parameter * self.item_bias[j])
 
             # Create copy of row of P since we need to update it but use older values for update on Q
             user_latent_feature_matrix_i = self.user_latent_feature_matrix[i, :][:]
 
             # Update user and item latent feature matrices
-            self.user_latent_feature_matrix[i, :] += self.alpha * (e * self.item_latent_feature_matrix[j, :] -
-                                                                   self.beta * self.user_latent_feature_matrix[i, :])
-            self.item_latent_feature_matrix[j, :] += self.alpha * (e * user_latent_feature_matrix_i - self.beta *
-                                                                   self.item_latent_feature_matrix[j, :])
+            self.user_latent_feature_matrix[i, :] += self.learning_rate * (e * self.item_latent_feature_matrix[j, :] -
+                                                                           self.regularisation_parameter *
+                                                                           self.user_latent_feature_matrix[i, :])
+            self.item_latent_feature_matrix[j, :] += self.learning_rate * (e * user_latent_feature_matrix_i -
+                                                                           self.regularisation_parameter *
+                                                                           self.item_latent_feature_matrix[j, :])
 
     def get_rating(self, i, j):
         """
@@ -111,7 +127,7 @@ class MF:
 
     def full_matrix(self):
         """
-        Computer the full matrix using the resultant biases, P and Q
+        Compute the full matrix using the resultant biases, P and Q
         """
         return self.global_bias + self.user_bias[:, np.newaxis] + self.item_bias[np.newaxis:, ] + self.\
             user_latent_feature_matrix.dot(self.item_latent_feature_matrix.T)
@@ -122,9 +138,9 @@ def recommend_items_for_target_item_mf(target_item):
     print(user_item_matrix)
     target_user = _get_target_user(user_item_matrix)
     print(target_user)
-    predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix)
+    predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix, "rmse")
     print(predicted_user_item_matrix)
-    recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, target_user)
+    recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, target_user, target_item)
     print(recommendations)
     return recommendations
 
@@ -136,15 +152,22 @@ def _get_target_user(user_item_matrix):
 
 
 # Calculate predictions for ratings for every user-item pair and return matrix
-def _get_item_rating_predictions(user_item_matrix):
-    mf = MF(user_item_matrix.transpose().to_numpy(), latent_dimensions=2, alpha=0.1, beta=0.01, iterations=30)
-    training_process = mf.train()
+def _get_item_rating_predictions(user_item_matrix, error_method):
+    return _predict_item_ratings(user_item_matrix, latent_dimensions=2, learning_rate=0.1,
+                                 regularisation_parameter=0.02, iterations=27, error_method=error_method)
+
+
+def _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter, iterations,
+                          error_method):
+    mf = MF(user_item_matrix.transpose().to_numpy(), latent_dimensions, learning_rate, regularisation_parameter,
+            iterations)
+    training_process = mf.train(error_method)
     predicted_user_item_matrix = pd.DataFrame(data=mf.full_matrix(), index=user_item_matrix.columns.values,
                                               columns=user_item_matrix.index.values).transpose()
     return predicted_user_item_matrix
 
 
 # Find up to highest 7 scoring items for target_user
-def _recommend_top_7_items_for_target_user(predicted_user_item_matrix, target_user):
-    sorted_items_for_target_user = predicted_user_item_matrix.nlargest(7, target_user)
+def _recommend_top_7_items_for_target_user(predicted_user_item_matrix, target_user, target_item):
+    sorted_items_for_target_user = predicted_user_item_matrix.drop(labels=target_item).nlargest(7, target_user)
     return sorted_items_for_target_user.index.values
