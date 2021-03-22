@@ -6,7 +6,7 @@ from django.shortcuts import render
 from .db_connector import DatabaseConnector as dbConnector
 from .get_stored_similar_items import get_similar_items
 from .keyword_mapper import map_id_to_keyword, map_keyword_to_id
-from .recommender_system import find_similar_items_to_target_item
+from .matrix_factorisation import recommend_items_for_target_item_mf
 from .web_scraper import web_scrape
 
 
@@ -60,7 +60,7 @@ def _recommend_items_from_id(target_item_id):
     similar_item_ids = get_similar_items(target_item_id)
 
     if not similar_item_ids:
-        similar_item_ids = find_similar_items_to_target_item(target_item_id)
+        similar_item_ids = recommend_items_for_target_item_mf(target_item_id)
 
     similar_items = list()
     for item_id in similar_item_ids:

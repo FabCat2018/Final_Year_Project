@@ -136,6 +136,12 @@ class MF:
 def recommend_items_for_target_item_mf(target_item):
     user_item_matrix = build_user_item_matrix(target_item)
     print(user_item_matrix)
+    recommendations = list()
+
+    # If matrix is empty, i.e. no way to make recommendations then return empty list
+    if user_item_matrix.empty:
+        return recommendations
+
     target_user = _get_target_user(user_item_matrix)
     print(target_user)
     predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix, "rmse")

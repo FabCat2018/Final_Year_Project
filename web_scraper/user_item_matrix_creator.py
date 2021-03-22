@@ -8,6 +8,10 @@ def build_user_item_matrix(target_item):
     cursor = DatabaseConnector.setup_db_connection()
     user_ids = _find_users_who_rated_target_item(cursor, target_item)
 
+    # If item is not rated by any user then return empty matrix
+    if len(user_ids) == 0:
+        return pd.DataFrame()
+
     database_results = list()
     for user in user_ids:
         database_results.extend(_find_items_rated_by_user(cursor, user))
