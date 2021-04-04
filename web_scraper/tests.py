@@ -8,8 +8,10 @@ import os
 import unittest
 
 from .user_item_matrix_creator import build_user_item_matrix
-from .matrix_factorisation import _get_item_rating_predictions as mf_predict, _predict_item_ratings as mf
-from .user_based_collaborative_filtering import _normalisation, _score_items_for_target_user_cf as cf_predict
+from .matrix_factorisation import _get_item_rating_predictions, _predict_item_ratings,\
+    _recommend_top_7_items_for_target_user
+from .user_based_collaborative_filtering import _normalisation, _recommend_top_7_items_for_users,\
+    _score_items_for_target_user_cf
 
 
 # region Nested Class
@@ -211,8 +213,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(5):
                 dimensions = latent_dimensions + i
-                mf_rating_prediction = mf(user_item_matrix, dimensions, learning_rate, regularisation_parameter,
-                                          iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, dimensions, learning_rate,
+                                                             regularisation_parameter, iterations, error).\
+                    loc[self.target_item].loc[user]
                 print(dimensions, " latent dimensions", "\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -222,8 +225,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(5):
                 rate = learning_rate * i
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, rate, regularisation_parameter,
-                                          iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, rate,
+                                                             regularisation_parameter, iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("Learning rate: ", rate, "\tMF Rating Prediction: ", mf_rating_prediction, "\tDifference: ",
                       abs(original_rating - mf_rating_prediction))
 
@@ -233,8 +237,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(5):
                 regularisation = regularisation_parameter * i
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation,
-                                          iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate,
+                                                             regularisation, iterations, error).loc[self.target_item].\
+                    loc[user]
                 print("Regularisation parameter: ", regularisation, "\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -244,8 +249,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(5):
                 new_iterations = iterations + (i * 2)
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter,
-                                          new_iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate,
+                                                             regularisation_parameter, new_iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("Iterations: ", new_iterations, "\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -255,8 +261,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(10):
                 new_learning_rate = 0.1 + (i / 100)
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, new_learning_rate, regularisation_parameter,
-                                          iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, new_learning_rate,
+                                                             regularisation_parameter, iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("Learning Rate: ", new_learning_rate, "\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -266,8 +273,9 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(20):
                 new_iterations = 20 + i
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate, regularisation_parameter,
-                                          new_iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate,
+                                                             regularisation_parameter, new_iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("Iterations: ", new_iterations, "\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -276,8 +284,9 @@ class RecommenderSystemTests(unittest.TestCase):
             #  RMSE appears to perform better overall
 
             for i in range(3):
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate,
-                                          regularisation_parameter, iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate,
+                                                             regularisation_parameter, iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("MSE \tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
@@ -285,12 +294,20 @@ class RecommenderSystemTests(unittest.TestCase):
 
             for i in range(3):
                 error = "rmse"
-                mf_rating_prediction = mf(user_item_matrix, latent_dimensions, learning_rate,
-                                          regularisation_parameter, iterations, error).loc[self.target_item].loc[user]
+                mf_rating_prediction = _predict_item_ratings(user_item_matrix, latent_dimensions, learning_rate,
+                                                             regularisation_parameter, iterations, error).\
+                    loc[self.target_item].loc[user]
                 print("RMSE\tMF Rating Prediction: ", mf_rating_prediction,
                       "\tDifference: ", abs(original_rating - mf_rating_prediction))
 
             print()
+
+    def test_recommendations_for_similar_users(self):
+        test_users = self.test_users
+        user_texts = ["Very low", "Low", "Medium", "High", "Very high"]
+        for i in range(len(self.test_users)):
+            self._compare_recommendations_for_similar_users(test_users[i], self.target_item, self.user_item_matrix,
+                                                            user_texts[i])
 
     # region Private Functions
 
@@ -304,7 +321,7 @@ class RecommenderSystemTests(unittest.TestCase):
         evenly_spaced_indices = np.linspace(0, len(sorted_unrated_items_for_users)-1, num_users)
         return sorted_unrated_items_for_users[np.round(evenly_spaced_indices).astype(int)]
 
-    # Compare results of recommender systems for user with many ratings
+    # Compare results of recommender systems for user with different numbers of ratings
     @staticmethod
     def _compare_recommender_systems(test_user, target_item, user_item_matrix, user_text):
         user_item_matrix = user_item_matrix.copy()
@@ -317,8 +334,9 @@ class RecommenderSystemTests(unittest.TestCase):
         user_item_matrix.loc[target_item].loc[test_user] = 0
 
         # Get predictions for rating
-        mf_rating_prediction = mf_predict(user_item_matrix, "rmse").loc[target_item].loc[test_user]
-        cf_rating_prediction = cf_predict(user_item_matrix, test_user).transpose().loc[target_item][0]
+        mf_rating_prediction = _get_item_rating_predictions(user_item_matrix, "rmse").loc[target_item].loc[test_user]
+        cf_rating_prediction = _score_items_for_target_user_cf(user_item_matrix, test_user).transpose().\
+            loc[target_item][0]
 
         print(user_text, " rating user")
         print("Actual: ", original_rating, "\tMF Prediction: ", mf_rating_prediction, "\tDifference: ",
@@ -326,5 +344,45 @@ class RecommenderSystemTests(unittest.TestCase):
         print("Adjusted item rating: ", adjusted_target_item_rating, "\tCF Prediction: ", cf_rating_prediction,
               "\tDifference: ", abs(adjusted_target_item_rating - cf_rating_prediction))
         print("\n")
+
+    # Compare recommendations for two similar users for users with different numbers of ratings
+    @staticmethod
+    def _compare_recommendations_for_similar_users(test_user, target_item, user_item_matrix, user_text):
+        user_item_matrix = user_item_matrix.copy()
+        similarity_matrix = user_item_matrix.corr(method="pearson")
+        all_similar_users = similarity_matrix.drop([test_user], axis=0)
+        similar_user = all_similar_users.nlargest(1, [test_user]).index.values[0]
+
+        print(user_text, " rating user")
+        print("Matrix Factorisation")
+
+        predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix, "mse")
+        test_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, test_user,
+                                                                           target_item)
+        print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
+
+        similar_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, similar_user,
+                                                                              target_item)
+        print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
+
+        exclusive_to_test_user = list(set(test_user_recommendations)-set(similar_user_recommendations))
+        exclusive_to_similar_user = list(set(similar_user_recommendations)-set(test_user_recommendations))
+        print("Exclusive to Test User: ", exclusive_to_test_user)
+        print("Exclusive to Similar User: ", exclusive_to_similar_user)
+        print()
+
+        print("Collaborative Filtering")
+        test_user_recommendations = _recommend_top_7_items_for_users(predicted_user_item_matrix, test_user)
+        print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
+
+        similar_user_recommendations = _recommend_top_7_items_for_users(predicted_user_item_matrix, similar_user)
+        print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
+
+        exclusive_to_test_user = list(set(test_user_recommendations) - set(similar_user_recommendations))
+        exclusive_to_similar_user = list(set(similar_user_recommendations) - set(test_user_recommendations))
+        print("Exclusive to Test User: ", exclusive_to_test_user)
+        print("Exclusive to Similar User: ", exclusive_to_similar_user)
+        print()
+        print()
 
     # endregion
