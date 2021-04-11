@@ -55,9 +55,9 @@ def _scrape_amazon(search_term, headers):
             else:
                 print("No games matching result")
 
-        # Extract relevant information from game_prices
+        # Sort relevant games by price_with_postage
         if len(relevant_games) > 0:
-            games = _find_lowest_games(relevant_games, "Amazon")
+            games = _sort_games_by_lowest_price_with_postage(relevant_games, "Amazon")
 
     return games
 
@@ -89,7 +89,7 @@ def _scrape_ebay(search_term, headers):
 
             # If there is at least one price in relevant_product_prices find the lowest and return
             if len(relevant_games) > 0:
-                games = _find_lowest_games(relevant_games, "EBay")
+                games = _sort_games_by_lowest_price_with_postage(relevant_games, "EBay")
             else:
                 print("No relevant products found")
         else:
@@ -186,7 +186,7 @@ def _get_rating_amazon(price_object):
     return "No rating"
 
 
-# Gets the link to the item page for a specific item on EBay page
+# Gets the link to the item page for a specific item on Amazon page
 def _get_web_link_amazon(price_object):
     title_section = price_object.find_parent("div", class_="sg-row").find_previous_sibling("div")
     if title_section:
@@ -275,39 +275,20 @@ def _contains_all_terms(product, key_terms):
     return True
 
 
-# Finds games with lowest base_price and price_with_postage respectively
-def _find_lowest_games(relevant_games, seller):
-    lowest_by_base_price = _find_element_with_lowest_value_for_attribute(relevant_games, 'base_price')
-    lowest_by_price_with_postage = _find_element_with_lowest_value_for_attribute(
-        relevant_games, 'price_with_postage')
-    games = [
-        {
+# Sorts relevant games by lowest price
+def _sort_games_by_lowest_price_with_postage(relevant_games, seller):
+    games = []
+    for game in relevant_games:
+        games.append({
             "seller": seller,
-            "price": lowest_by_base_price['base_price'],
-            "price_with_postage": lowest_by_base_price['price_with_postage'],
-            "rating": lowest_by_base_price['rating'],
-            "in_stock": lowest_by_base_price['in_stock'],
-            "link": lowest_by_base_price['web_link']
-        },
-        {
-            "seller": seller,
-            "price": lowest_by_price_with_postage['base_price'],
-            "price_with_postage": lowest_by_price_with_postage['price_with_postage'],
-            "rating": lowest_by_price_with_postage['rating'],
-            "in_stock": lowest_by_price_with_postage['in_stock'],
-            "link": lowest_by_price_with_postage['web_link']
-        }
-    ]
-    return games
+            "price": game['base_price'],
+            "price_with_postage": game['price_with_postage'],
+            "rating": game['rating'],
+            "in_stock": game['in_stock'],
+            "link": game['web_link']
+        })
 
-
-# Finds game with lowest value for specified attribute
-def _find_element_with_lowest_value_for_attribute(collection, attribute):
-    lowest_element = collection[0]
-    for i in range(len(collection)):
-        if lowest_element[attribute] > collection[i][attribute]:
-            lowest_element = collection[i]
-    return lowest_element
+    return sorted(games, key=lambda x: x["price_with_postage"])
 
 
 # Formats search term to be usable in URL
