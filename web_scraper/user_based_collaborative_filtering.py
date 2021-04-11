@@ -30,9 +30,10 @@ def _score_items_for_target_user_cf(user_item_matrix, target_user_name):
     # Normalise user_item pivot_table
     normalised_user_item_matrix = _normalisation(user_item_matrix)
 
-    # If more than 5 similar users, take most similar 5
-    if len(similarity_matrix.columns) > 20:
-        most_similar_users = _find_20_most_similar_users_to_target_user(similarity_matrix, target_user_name)
+    # If more than kernel_size, take up to kernel size
+    kernel_size = 50
+    if len(similarity_matrix.columns) > kernel_size:
+        most_similar_users = _find_most_similar_users_to_target_user(similarity_matrix, target_user_name, kernel_size)
     else:
         most_similar_users = user_item_matrix
 
@@ -60,10 +61,10 @@ def _calculate_pearson_similarity_for_matrix(matrix):
     return matrix.corr(method="pearson")
 
 
-def _find_20_most_similar_users_to_target_user(similarity_matrix, target_user_name):
+def _find_most_similar_users_to_target_user(similarity_matrix, target_user_name, kernel_size):
     all_similar_users = similarity_matrix.drop([target_user_name], axis=0)
-    twenty_most_similar_users = all_similar_users.nlargest(20, [target_user_name])
-    return twenty_most_similar_users.index.values
+    most_similar_users = all_similar_users.nlargest(kernel_size, [target_user_name])
+    return most_similar_users.index.values
 
 
 def _score_items(neighbour_rating, neighbour_similarity, user_item_matrix, target_user_name):
