@@ -1,6 +1,6 @@
 from .db_connector import DatabaseConnector
 
-from .recommender_system import find_similar_items_to_target_item
+from .matrix_factorisation import recommend_items_for_target_item_mf
 
 
 def store_similar_items():
@@ -15,14 +15,14 @@ def store_similar_items():
 
     # Iterate through each of the IDs
     for target_item in list(rows):
-        similar_items = find_similar_items_to_target_item(target_item.item_id)
+        similar_items = recommend_items_for_target_item_mf(target_item.item_id).tolist()
         print("Length of similar items: ", len(similar_items))
         sql_text = "INSERT INTO [Final Year Project].[dbo].[Item_Id_To_Similar_Item_Ids](target_item, first_similar," \
                    "second_similar, third_similar, fourth_similar, fifth_similar, sixth_similar, seventh_similar)" \
                    "VALUES('" + str(target_item.item_id) + "'"
 
         for element in similar_items:
-            sql_text += ", '" + str(element['item_id']) + "'"
+            sql_text += ", '" + str(element) + "'"
 
         while len(similar_items) < 7:
             sql_text += ", ''"
