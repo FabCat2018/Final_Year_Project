@@ -104,6 +104,11 @@
                 }
 
                 $.each(recommender_results, function(index, element) {
+                    if (element != "") {
+                        let suggestion =
+                            `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
+                        $('#recommendations').append(suggestion);
+                    }
                     let suggestion =
                         `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
                     $('#recommendations').append(suggestion);

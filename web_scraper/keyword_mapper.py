@@ -2,6 +2,10 @@ from .db_connector import DatabaseConnector as dbConnector
 
 
 def map_id_to_keyword(item_id):
+    # If item has not got all recommendations, do not execute query
+    if item_id == "":
+        return ""
+
     cursor = dbConnector.setup_db_connection()
     find_keyword_query = """
         SELECT [keywords]
