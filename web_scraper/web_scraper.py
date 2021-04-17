@@ -308,8 +308,12 @@ def _sort_games_by_lowest_price_with_postage(relevant_games, seller):
     return sorted(games, key=lambda x: x["price_with_postage"])
 
 
-# Formats search term to be usable in URL
+# Formats search term to be usable in URL by encoding all special characters
 def _url_format(term):
-    return term.replace(" ", "+")
+    return term.replace("$", "%24").replace("&", "%26").replace("+", "%2B").replace(",", "%2C").replace("/", "%2F") \
+        .replace(":", "%3A").replace(";", "%3B").replace("=", "%3D").replace("?", "%3F").replace("@", "%40")\
+        .replace(" ", "%20").replace(">", "%3E").replace("#", "%23").replace("%", "%25").replace("{", "%7B")\
+        .replace("}", "%7D").replace("|", "%7C").replace("\\", "%5C").replace("~", "%7E").replace("[", "%5B")\
+        .replace("]", "%5D")
 
 # endregion

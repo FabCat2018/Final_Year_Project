@@ -47,7 +47,7 @@ class ProjectTests(unittest.TestCase):
         driver = self.driver
 
         # Enter search term
-        driver.find_element_by_css_selector("#search-term").send_keys("Hexic Deluxe")
+        driver.find_element_by_css_selector("#search-term").send_keys("Beautiful Katamari (Xbox 360)")
         driver.find_element_by_css_selector("#search-button").click()
 
         price_table_element = driver.find_element_by_css_selector("#price-table")
@@ -57,6 +57,7 @@ class ProjectTests(unittest.TestCase):
         assert len(price_table_element.find_elements_by_css_selector("tr")) >= 3
 
         # Check recommendation entries
+        print(driver.find_elements_by_css_selector(".recommendation"))
         assert len(driver.find_elements_by_css_selector(".recommendation")) == 1
 
     def test_SearchByKeyword_NoRecommendations_NoRecommendationsDisplayed(self):
@@ -99,7 +100,7 @@ class ProjectTests(unittest.TestCase):
         driver = self.driver
 
         # Enter search term
-        driver.find_element_by_css_selector("#search-term").send_keys("Hexic")
+        driver.find_element_by_css_selector("#search-term").send_keys("Beautiful Katamari (Xbox 360)")
         WebDriverWait(driver, 10).until(expected_conditions.presence_of_element_located(
             (By.CSS_SELECTOR, ".ui-menu-item div"))).click()
 
@@ -154,7 +155,7 @@ class ProjectTests(unittest.TestCase):
         driver = self.driver
 
         # Enter search term
-        driver.find_element_by_css_selector("#search-term").send_keys("Hexic Deluxe")
+        driver.find_element_by_css_selector("#search-term").send_keys("Mystic Legacy: The Great Ring (PC CD)")
         driver.find_element_by_css_selector("#search-button").click()
 
         price_table_element = driver.find_element_by_css_selector("#price-table")
@@ -168,9 +169,10 @@ class ProjectTests(unittest.TestCase):
         assert len(recommendations) == 1
 
         # Click recommendation
+        previous_recommendation_text = recommendations[0].text
         driver.find_element_by_css_selector(".recommendation").click()
         WebDriverWait(driver, 500).until(text_to_change(
-            (By.CSS_SELECTOR, ".recommendation"), recommendations[0].text))
+            (By.CSS_SELECTOR, ".recommendation"), previous_recommendation_text))
 
         # Check prices and recommendations for new item
         assert len(price_table_element.find_elements_by_css_selector("tr")) >= 3

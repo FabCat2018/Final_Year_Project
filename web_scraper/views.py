@@ -57,12 +57,17 @@ def _recommend_items(target_item):
 
 
 def _recommend_items_from_id(target_item_id):
+    similar_items = list()
+
+    if target_item_id == "":
+        similar_items.append({'name': "", 'id': ""})
+        return similar_items
+
     similar_item_ids = get_similar_items(target_item_id)
 
     if not similar_item_ids:
         similar_item_ids = recommend_items_for_target_item_mf(target_item_id)
 
-    similar_items = list()
     for item_id in similar_item_ids:
         similar_items.append({'name': map_id_to_keyword(item_id), 'id': item_id})
 
