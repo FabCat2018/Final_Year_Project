@@ -12,12 +12,5 @@ def get_similar_items(target_item):
 
     cursor.execute(get_recommendations_query)
 
-    similar_item_ids = list()
-    i = 0
-    for item in cursor.fetchall():
-        if item[i] is not None and i < len(item):
-            similar_item_ids.append(item[i])
-        else:
-            break
-        i += 1
+    similar_item_ids = list(cursor.fetchone())
     return similar_item_ids

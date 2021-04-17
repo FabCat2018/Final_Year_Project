@@ -23,6 +23,7 @@
             <table class="table table-striped" id="price-table" hidden>
                 <tr>
                     <th>Site</th>
+                    <th>Image</th>
                     <th>Price</th>
                     <th>Price + Postage</th>
                     <th>Rating</th>
@@ -47,6 +48,7 @@
                 let tableHeadings =
                     `<tr>
                         <th>Site</th>
+                        <th>Image</th>
                         <th>Price</th>
                         <th>Price + Postage</th>
                         <th>Rating</th>
@@ -75,16 +77,19 @@
                     let rating = element.rating;
                     let in_stock = element.in_stock;
                     let link = `<a href="${element.link}" rel="noopener noreferrer" target="_blank">Product Link</a>`;
+                    let image = `<img src="${element.image}" />`;
 
                     if (element.price==="N/A") {
                         price = element.price;
                         price_with_postage = "N/A";
                         link = "No link";
+                        image = "No image";
                     }
 
                     let result =
                         `<tr>
                             <td>${seller}</td>
+                            <td>${image}</td>
                             <td>${price}</td>
                             <td>${price_with_postage}</td>
                             <td>${rating}</td>
@@ -109,9 +114,6 @@
                             `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
                         $('#recommendations').append(suggestion);
                     }
-                    let suggestion =
-                        `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
-                    $('#recommendations').append(suggestion);
                 });
 
                 $('#recommender-results').removeAttr("hidden");

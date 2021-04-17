@@ -99,29 +99,9 @@ def _scrape_ebay(search_term, headers):
 
     return games
 
-    #
-    # # Review score
-    # review_score_element = soup.select('.a-star-4-5')[0].get_text().split(' ')[0]
-    # review_score_stripped = review_score_element.replace(",", ".")
-    # review_score = float(review_score_stripped)
-    # print("Review Score: ", review_score)
-    #
-    # # Review count
-    # review_count_element = soup.select('#acrCustomerReviewText')[0].get_text().split(' ')[0]
-    # review_count_stripped = review_count_element.replace(".", "")
-    # review_count = int(review_count_stripped)
-    # print("Review Count: ", review_count)
-    #
-    # # Check if the product is Out of Stock
-    # try:
-    #     soup.select('#availability .a-color-state')[0].get_text().strip()
-    #     stock = 'Out of Stock'
-    # except:
-    #     stock = 'Available'
-    # print(stock)
 
+# region Amazon-specific methods
 
-# Amazon-specific methods
 
 # Finds games matching key_terms on Amazon page
 def _find_relevant_games_amazon(game_info, key_terms, relevant_games):
@@ -136,13 +116,15 @@ def _find_relevant_games_amazon(game_info, key_terms, relevant_games):
                     price_with_postage = _get_postage_price_amazon(price_object, base_price)
                     rating = _get_rating_amazon(price_object)
                     web_link = _get_web_link_amazon(price_object)
+                    image = _get_product_image_amazon(price_object)
 
                     relevant_games.append({
                         "base_price": base_price,
                         "price_with_postage": price_with_postage,
                         "rating": rating,
                         "in_stock": "In Stock",
-                        "web_link": web_link
+                        "web_link": web_link,
+                        "image": image
                     })
             else:
                 print("No price for item")
@@ -199,7 +181,24 @@ def _get_web_link_amazon(price_object):
     return "No link"
 
 
-# EBay-specific methods
+# Gets the image for a specific item on Amazon page
+def _get_product_image_amazon(price_object):
+    image_section = price_object.find_parent("div", class_="sg-row").find_parent("div", class_="sg-row")
+    if image_section:
+        try:
+            # Find img tag containing image
+            product_image = image_section.find("img", {"class": "s-image"})['src']
+            print(product_image)
+            return product_image
+        except ValueError:
+            return "No image"
+    return "No image"
+
+
+# endregion
+
+# region EBay-specific methods
+
 
 # Finds games matching key_terms on EBay page
 def _find_relevant_games_ebay(all_products, key_terms, relevant_games):
@@ -214,13 +213,15 @@ def _find_relevant_games_ebay(all_products, key_terms, relevant_games):
                     price_with_postage = _get_postage_price_ebay(price_object, base_price)
                     rating = _get_rating_ebay(price_object)
                     web_link = _get_web_link_ebay(price_object)
+                    image = _get_product_image_ebay(price_object)
 
                     relevant_games.append({
                         "base_price": base_price,
                         "price_with_postage": price_with_postage,
                         "rating": rating,
                         "in_stock": "In Stock",
-                        "web_link": web_link
+                        "web_link": web_link,
+                        "image": image
                     })
         except AttributeError:
             print("Item has no title")
@@ -265,7 +266,22 @@ def _get_web_link_ebay(price_object):
     return "No link"
 
 
-# Helper Methods
+# Gets the image for a specific item on EBay page
+def _get_product_image_ebay(price_object):
+    image_section = price_object.find_parent("div", class_="s-item__info").find_previous_sibling("div")
+    if image_section:
+        try:
+            # Find img tag containing image
+            product_image = image_section.find("img", {"class": "s-item__image-img"})['src']
+            return product_image
+        except ValueError:
+            return "No image"
+    return "No image"
+
+
+# endregion
+
+# region Helper Methods
 
 # Checks that all terms are present in the product name
 def _contains_all_terms(product, key_terms):
@@ -285,7 +301,8 @@ def _sort_games_by_lowest_price_with_postage(relevant_games, seller):
             "price_with_postage": game['price_with_postage'],
             "rating": game['rating'],
             "in_stock": game['in_stock'],
-            "link": game['web_link']
+            "link": game['web_link'],
+            "image": game['image']
         })
 
     return sorted(games, key=lambda x: x["price_with_postage"])
@@ -294,3 +311,5 @@ def _sort_games_by_lowest_price_with_postage(relevant_games, seller):
 # Formats search term to be usable in URL
 def _url_format(term):
     return term.replace(" ", "+")
+
+# endregion
