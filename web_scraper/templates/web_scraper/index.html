@@ -9,19 +9,19 @@
     </head>
 
     <body>
-        <div class="container-lg p-3 text-center text-white bg-secondary">
+        <div class="container-lg p-3 text-center text-white bg-primary">
             <h1 class="display-2">Video Game Price Comparison App</h1>
         </div>
         <div class="container-lg pt-5 text-center bg-white">
             <h2 class="display-4">Search Games & Accessories</h2>
-            <input type="text" placeholder="Search..." id="search-term">
+            <input type="text" placeholder="Search..." class="search-query input-large" id="search-term">
             <button type="button" id="search-button">Search</button>
         </div><br>
 
         <div class="container-lg pt-5 text-center" id="prices">
-            <h4 class="p-3 mb-2 bg-secondary text-white text-center" id="search-results" hidden>Search Results</h4>
+            <h3 class="p-3 mb-2 bg-primary text-white text-center" id="search-results" hidden>Search Results</h3>
             <table class="table table-striped" id="price-table" hidden>
-                <tr>
+                <tr style="font-size:1.5em">
                     <th>Site</th>
                     <th>Image</th>
                     <th>Price</th>
@@ -34,9 +34,14 @@
         </div><br>
 
         <div class="container-lg pt-5 text-center" id="recommendations" hidden>
-            <h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
+            <h4 class="p-3 mb-2 bg-primary text-white text-center" id="recommender-results" hidden>
                 Recommended Games
             </h4>
+        </div>
+
+        <div class="container-lg pt-5 text-center" id="loading-symbol" style="display:none">
+            <!-- Image taken from GIPHY at URL specified below -->
+            <img src="https://media.giphy.com/media/xTk9ZvMnbIiIew7IpW/giphy.gif">
         </div>
 
         <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -46,7 +51,7 @@
             function hidePreviousPricesAndRecommendations() {
                 $('#price-table').empty();
                 let tableHeadings =
-                    `<tr>
+                    `<tr style="font-size:1.5em">
                         <th>Site</th>
                         <th>Image</th>
                         <th>Price</th>
@@ -60,7 +65,7 @@
                 $('#search-results').attr("hidden", true);
 
                 let recommendations_title =
-                    `<h4 class="p-3 mb-2 bg-secondary text-white text-center" id="recommender-results" hidden>
+                    `<h4 class="p-3 mb-2 bg-primary text-white text-center" id="recommender-results" hidden>
                         Recommended Games
                     </h4>`;
                 $('#recommendations').empty();
@@ -87,7 +92,7 @@
                     }
 
                     let result =
-                        `<tr>
+                        `<tr style="font-size:1.2em">
                             <td>${seller}</td>
                             <td>${image}</td>
                             <td>${price}</td>
@@ -101,17 +106,18 @@
 
                 $('#search-results').removeAttr("hidden");
                 $('#price-table').removeAttr("hidden");
+                $(window).scrollTop(0);
             }
 
             function displayNewRecommendations(recommender_results) {
-                if (recommender_results.length < 1) {
+                if (recommender_results[0].name === "") {
                     $('#recommendations').append('<p>No recommendations for this item.</p>');
                 }
 
                 $.each(recommender_results, function(index, element) {
-                    if (element != "") {
+                    if (element.name != "") {
                         let suggestion =
-                            `<p><a href="" class="recommendation" id="${element.id}">${element.name}</a></p><br>`;
+                            `<p><big><a href="" class="recommendation" id="${element.id}">${element.name}</a></big></p><br>`;
                         $('#recommendations').append(suggestion);
                     }
                 });
@@ -121,6 +127,8 @@
             }
 
             // Search Functions
+
+            // Used to get price comparison results and recommendations for selected search suggestion
             $(function() {
                 $("#search-term").autocomplete({
                     source: '{% url "get_search_suggestions" %}',
@@ -133,23 +141,41 @@
                             url: '{% url "search_game_by_id" %}',
                             data: {"game_id": ui.item.value},
                             type: 'GET',
-                            success: function(response) {
-                                console.log(response);
-                                if($('#price-table tr').length > 1) {
+                            beforeSend: function() {
+                                $("#loading-symbol").show();
+                                $("#search-button").prop("disabled", true);
+
+                                if ($('#price-table tr').length > 1) {
                                     hidePreviousPricesAndRecommendations();
                                 }
-
+                            },
+                            success: function(response) {
+                                console.log(response);
                                 displayNewPrices(response['search_results']);
                                 displayNewRecommendations(response['recommender_results']);
                             },
                             error: function(error) {
                                 console.log(error);
+                            },
+                            complete: function() {
+                                $("#loading-symbol").hide();
+                                $("#search-button").prop("disabled", false);
                             }
                         });
                     },
                 });
             });
 
+            // Used to allow enter to trigger click event
+            $("#search-term").keypress(function(e) {
+                let key = e.which;
+                if (key == 13) { // enter key code
+                    $("#search-button").click();
+                    return false;
+                }
+            });
+
+            // Used to get price comparison results and recommendations
             $("#search-button").click(function(evt) {
                 evt.preventDefault();
                 let search_term = $('#search-term').val();
@@ -158,22 +184,32 @@
                     url: '{% url "search_game_by_keyword" %}',
                     data: {"search_term": search_term},
                     type: 'GET',
-                    success: function(response) {
-                        console.log(response);
-                        if($('#price-table tr').length > 1) {
+                    beforeSend: function() {
+                        $("#loading-symbol").show();
+                        $("#search-button").prop("disabled", true);
+
+                        if ($('#price-table tr').length > 1) {
                             hidePreviousPricesAndRecommendations();
                         }
-
+                    },
+                    success: function(response) {
+                        console.log(response);
                         displayNewPrices(response['search_results']);
                         displayNewRecommendations(response['recommender_results']);
                     },
                     error: function(error) {
                         console.log(error);
+                    },
+                    complete: function() {
+                        $("#loading-symbol").hide();
+                        $("#search-button").prop("disabled", false);
                     }
                 });
             });
 
             // Recommendation Functions
+
+            // Used to run price comparison and recommendations on selected item
             $("body").on("click", ".recommendation", function(evt) {
                 evt.preventDefault();
                 let game_title = $(this).text();
@@ -185,17 +221,25 @@
                     url: '{% url "search_game_by_id" %}',
                     data: {"game_id": game_id},
                     type: 'GET',
-                    success: function(response) {
-                        console.log(response);
-                        if($('#price-table tr').length > 1) {
+                    beforeSend: function() {
+                        $("#loading-symbol").show();
+                        $("#search-button").prop("disabled", true);
+
+                        if ($('#price-table tr').length > 1) {
                             hidePreviousPricesAndRecommendations();
                         }
-
+                    },
+                    success: function(response) {
+                        console.log(response);
                         displayNewPrices(response['search_results']);
                         displayNewRecommendations(response['recommender_results']);
                     },
                     error: function(error) {
                         console.log(error);
+                    },
+                    complete: function() {
+                        $("#loading-symbol").hide();
+                        $("#search-button").prop("disabled", false);
                     }
                 });
             });
