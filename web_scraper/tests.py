@@ -57,7 +57,6 @@ class ProjectTests(unittest.TestCase):
         assert len(price_table_element.find_elements_by_css_selector("tr")) >= 3
 
         # Check recommendation entries
-        print(driver.find_elements_by_css_selector(".recommendation"))
         assert len(driver.find_elements_by_css_selector(".recommendation")) == 1
 
     def test_SearchByKeyword_NoRecommendations_NoRecommendationsDisplayed(self):

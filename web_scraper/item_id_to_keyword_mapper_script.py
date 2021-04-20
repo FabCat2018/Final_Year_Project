@@ -42,7 +42,6 @@ for amazon_id in list(rows):
 
     # Create the object that will contain all the info in the URL
     soup = BeautifulSoup(amazon_page.content, features="lxml")
-    # print(soup.prettify())
 
     # Product title without HTML tags or whitespace
     title = soup.find("span", {"class": "a-size-medium a-color-base a-text-normal"})

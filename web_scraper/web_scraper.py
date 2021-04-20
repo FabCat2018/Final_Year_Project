@@ -43,7 +43,11 @@ def _scrape_amazon(search_term, headers):
         section_spans = soup.select("div.a-section.a-spacing-small.a-spacing-top-small span")
         if section_spans:
             results_line = section_spans[0].get_text().strip()
-            number_of_results = int(re.findall(r"\d+", results_line)[-1])
+            results = re.findall(r"\d+", results_line)
+            try:
+                number_of_results = int(results[-1])
+            except IndexError:
+                number_of_results = 1
 
             # Get each item on the results page that is not a sponsored item
             game_info = soup.select(
@@ -310,10 +314,6 @@ def _sort_games_by_lowest_price_with_postage(relevant_games, seller):
 
 # Formats search term to be usable in URL by encoding all special characters
 def _url_format(term):
-    return term.replace("$", "%24").replace("&", "%26").replace("+", "%2B").replace(",", "%2C").replace("/", "%2F") \
-        .replace(":", "%3A").replace(";", "%3B").replace("=", "%3D").replace("?", "%3F").replace("@", "%40")\
-        .replace(" ", "%20").replace(">", "%3E").replace("#", "%23").replace("%", "%25").replace("{", "%7B")\
-        .replace("}", "%7D").replace("|", "%7C").replace("\\", "%5C").replace("~", "%7E").replace("[", "%5B")\
-        .replace("]", "%5D")
+    return term.replace(" ", "+")
 
 # endregion

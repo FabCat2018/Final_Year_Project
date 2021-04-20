@@ -13,7 +13,6 @@ def map_id_to_keyword(item_id):
         WHERE [item_id] = '{item_id}'
     """.format(item_id=item_id)
 
-    print(find_keyword_query)
     cursor.execute(find_keyword_query)
 
     rows = cursor.fetchall()

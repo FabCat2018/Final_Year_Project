@@ -25,7 +25,6 @@ def get_search_suggestions(request):
             FROM [Final Year Project].[dbo].[Item_Id_To_Keywords]
             WHERE [keywords] LIKE '%{term}%'
         """.format(term=escaped_search_term)
-        print(get_matching_item_keywords_query)
         cursor.execute(get_matching_item_keywords_query)
 
         search_suggestions = list()

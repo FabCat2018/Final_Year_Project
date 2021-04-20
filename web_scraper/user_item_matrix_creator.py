@@ -31,7 +31,6 @@ def _find_users_who_rated_target_item(cursor, target_item):
         FROM [Final Year Project].[dbo].[Amazon_Video_Games_Ratings_Subset]
         WHERE [item_id] = '{target_item}'
     """.format(target_item=target_item)
-    print(get_users_for_item_query)
     cursor.execute(get_users_for_item_query)
 
     user_ids = list()
@@ -47,7 +46,6 @@ def _find_items_rated_by_user(cursor, user):
         FROM [Final Year Project].[dbo].[Amazon_Video_Games_Ratings_Subset]
         WHERE [user_id] = '{user}' 
     """.format(user=user)
-    print(get_items_for_user_query)
     cursor.execute(get_items_for_user_query)
 
     results = list()
