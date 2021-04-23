@@ -32,7 +32,7 @@ class ProjectTests(unittest.TestCase):
 
     # Open browser
     def setUp(self):
-        self.driver = Chrome(os.path.join(os.environ['HOMEPATH'], 'Desktop/chromedriver.exe'))
+        self.driver = Chrome(os.path.join(os.environ['HOMEPATH'], 'Desktop/FYP Web Drivers/chromedriver.exe'))
         self.driver.maximize_window()
         self.driver.get("http://127.0.0.1:8000/")
 
@@ -186,12 +186,14 @@ class RecommenderSystemTests(unittest.TestCase):
         self.target_item = "B003ZSP0WW"     # Item rated by most users in DB
         self.user_item_matrix = build_user_item_matrix(self.target_item)
         self.test_users = self._get_test_user_ids(self.user_item_matrix, 5)
+        self.test_iterations = 3
 
     def test_recommender_systems_for_each_user(self):
         test_users = self.test_users
         user_texts = ["Very low", "Low", "Medium", "High", "Very high"]
         for i in range(len(self.test_users)):
-            self._compare_recommender_systems(test_users[i], self.target_item, self.user_item_matrix, user_texts[i])
+            self._compare_recommender_systems(test_users[i], self.target_item, self.user_item_matrix, user_texts[i],
+                                              self.test_iterations)
 
     def test_mf_optimisations(self):
         user_item_matrix = self.user_item_matrix.copy()
@@ -206,7 +208,7 @@ class RecommenderSystemTests(unittest.TestCase):
             original_rating = user_item_matrix.loc[self.target_item].loc[user]
             user_item_matrix.loc[self.target_item].loc[user] = 0
 
-            print("User: ", user, "\tOriginal Rating: ", original_rating)
+            print("\nUser: ", user, "\tOriginal Rating: ", original_rating)
 
             # Get predictions for target_item with differing values for MF
 
@@ -308,7 +310,7 @@ class RecommenderSystemTests(unittest.TestCase):
         user_texts = ["Very low", "Low", "Medium", "High", "Very high"]
         for i in range(len(self.test_users)):
             self._compare_recommendations_for_similar_users(test_users[i], self.target_item, self.user_item_matrix,
-                                                            user_texts[i])
+                                                            user_texts[i], self.test_iterations)
 
     # region Private Functions
 
@@ -324,7 +326,7 @@ class RecommenderSystemTests(unittest.TestCase):
 
     # Compare results of recommender systems for user with different numbers of ratings
     @staticmethod
-    def _compare_recommender_systems(test_user, target_item, user_item_matrix, user_text):
+    def _compare_recommender_systems(test_user, target_item, user_item_matrix, user_text, test_iterations):
         user_item_matrix = user_item_matrix.copy()
 
         # Get adjusted user_item_matrix rating for CF comparison
@@ -334,56 +336,59 @@ class RecommenderSystemTests(unittest.TestCase):
         original_rating = user_item_matrix.loc[target_item].loc[test_user]
         user_item_matrix.loc[target_item].loc[test_user] = 0
 
-        # Get predictions for rating
-        mf_rating_prediction = _get_item_rating_predictions(user_item_matrix, "rmse").loc[target_item].loc[test_user]
-        cf_rating_prediction = _score_items_for_target_user_cf(user_item_matrix, test_user).transpose().\
-            loc[target_item][0]
+        for i in range(test_iterations):
+            # Get predictions for rating
+            mf_rating_prediction = _get_item_rating_predictions(user_item_matrix, "rmse").loc[target_item].loc[test_user]
+            cf_rating_prediction = _score_items_for_target_user_cf(user_item_matrix, test_user).transpose().\
+                loc[target_item][0]
 
-        print(user_text, " rating user")
-        print("Actual: ", original_rating, "\tMF Prediction: ", mf_rating_prediction, "\tDifference: ",
-              abs(original_rating - mf_rating_prediction))
-        print("Adjusted item rating: ", adjusted_target_item_rating, "\tCF Prediction: ", cf_rating_prediction,
-              "\tDifference: ", abs(adjusted_target_item_rating - cf_rating_prediction))
-        print("\n")
+            print("\n", user_text, " rating user")
+            print("Actual: ", original_rating, "\tMF Prediction: ", mf_rating_prediction, "\tDifference: ",
+                  abs(original_rating - mf_rating_prediction))
+            print("Adjusted item rating: ", adjusted_target_item_rating, "\tCF Prediction: ", cf_rating_prediction,
+                  "\tDifference: ", abs(adjusted_target_item_rating - cf_rating_prediction))
+            print("\n")
 
     # Compare recommendations for two similar users for users with different numbers of ratings
     @staticmethod
-    def _compare_recommendations_for_similar_users(test_user, target_item, user_item_matrix, user_text):
-        user_item_matrix = user_item_matrix.copy()
-        similarity_matrix = user_item_matrix.corr(method="pearson")
-        all_similar_users = similarity_matrix.drop([test_user], axis=0)
-        similar_user = all_similar_users.nlargest(1, [test_user]).index.values[0]
+    def _compare_recommendations_for_similar_users(test_user, target_item, user_item_matrix, user_text, test_iterations):
+        print("\n", user_text, " rating user")
 
-        print(user_text, " rating user")
-        print("Matrix Factorisation")
+        for i in range(test_iterations):
+            print("Matrix Factorisation")
+            user_item_matrix = user_item_matrix.copy()
 
-        predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix, "mse")
-        test_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, test_user,
-                                                                           target_item)
-        print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
+            similarity_matrix = user_item_matrix.corr(method="pearson")
+            all_similar_users = similarity_matrix.drop([test_user], axis=0)
+            similar_user = all_similar_users.nlargest(1, [test_user]).index.values[0]
 
-        similar_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, similar_user,
-                                                                              target_item)
-        print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
+            predicted_user_item_matrix = _get_item_rating_predictions(user_item_matrix, "mse")
+            test_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, test_user,
+                                                                               target_item)
+            print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
 
-        exclusive_to_test_user = list(set(test_user_recommendations)-set(similar_user_recommendations))
-        exclusive_to_similar_user = list(set(similar_user_recommendations)-set(test_user_recommendations))
-        print("Exclusive to Test User: ", exclusive_to_test_user)
-        print("Exclusive to Similar User: ", exclusive_to_similar_user)
-        print()
+            similar_user_recommendations = _recommend_top_7_items_for_target_user(predicted_user_item_matrix, similar_user,
+                                                                                  target_item)
+            print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
 
-        print("Collaborative Filtering")
-        test_user_recommendations = _recommend_top_7_items_for_users(predicted_user_item_matrix, test_user)
-        print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
+            exclusive_to_test_user = list(set(test_user_recommendations)-set(similar_user_recommendations))
+            exclusive_to_similar_user = list(set(similar_user_recommendations)-set(test_user_recommendations))
+            print("Exclusive to Test User: ", exclusive_to_test_user)
+            print("Exclusive to Similar User: ", exclusive_to_similar_user)
+            print()
 
-        similar_user_recommendations = _recommend_top_7_items_for_users(predicted_user_item_matrix, similar_user)
-        print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
+            print("Collaborative Filtering")
+            test_user_recommendations = _recommend_top_7_items_for_users(user_item_matrix, test_user)
+            print("Test User: ", test_user, "\tRecommendations: ", test_user_recommendations)
 
-        exclusive_to_test_user = list(set(test_user_recommendations) - set(similar_user_recommendations))
-        exclusive_to_similar_user = list(set(similar_user_recommendations) - set(test_user_recommendations))
-        print("Exclusive to Test User: ", exclusive_to_test_user)
-        print("Exclusive to Similar User: ", exclusive_to_similar_user)
-        print()
-        print()
+            similar_user_recommendations = _recommend_top_7_items_for_users(user_item_matrix, similar_user)
+            print("Similar User: ", similar_user, "\tRecommendations: ", similar_user_recommendations)
+
+            exclusive_to_test_user = list(set(test_user_recommendations) - set(similar_user_recommendations))
+            exclusive_to_similar_user = list(set(similar_user_recommendations) - set(test_user_recommendations))
+            print("Exclusive to Test User: ", exclusive_to_test_user)
+            print("Exclusive to Similar User: ", exclusive_to_similar_user)
+            print()
+            print()
 
     # endregion
