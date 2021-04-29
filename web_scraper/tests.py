@@ -32,7 +32,7 @@ class ProjectTests(unittest.TestCase):
 
     # Open browser
     def setUp(self):
-        self.driver = Chrome(os.path.join(os.environ['HOMEPATH'], 'Desktop/FYP Web Drivers/chromedriver.exe'))
+        self.driver = Chrome(os.path.abspath("C:\\bin\\chromedriver.exe"))
         self.driver.maximize_window()
         self.driver.get("http://127.0.0.1:8000/")
 

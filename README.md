@@ -1,0 +1,29 @@
+**How to Setup the Project**
+* Extract the ZIP file to the desired location
+* (Optional) Create a virtual Python environment
+    * Install Anaconda (https://docs.anaconda.com/anaconda/install/)
+    * Run the following commands in the folder where the ZIP was extracted, using the Anaconda shell:
+        * `conda create --name <name> python=3.7`
+        * `conda activate <name>`
+
+**How to Run the Project**
+
+* *First time running the project*: Run the following commands using the shell in the folder the ZIP was extracted into:
+    * `pip install --upgrade pip`
+    * `pip install -r requirements.txt`
+* Run the following command to start the local server: `python manage.py runserver`
+* Open a Chrome browser and insert the following URL into the URL bar: 127.0.0.1:8000
+* Search for a game as desired using the search-bar
+
+**How to Run the Test Suite**
+
+* **WARNING**: These tests took around 3 hours to run during development. Run only if bored for three hours.
+* Ensure that the server is already running by using the command indicated above: `python manage.py runserver`
+* Follow the instructions at
+https://zwbetz.com/download-chromedriver-binary-and-add-to-your-path-for-automated-functional-testing/
+to setup the webdriver used for testing.
+    * **Make sure the driver matches the version of Chrome your PC uses.**
+* Open a new Anaconda prompt and either access the virtual environment if virtual environment was used, or simply run
+`python manage.py test` in the folder where the ZIP was extracted
+* Alternatively, to run the feature tests only, as these complete very quickly, run
+`python manage.py test web_scraper.tests.ProjectTests`
