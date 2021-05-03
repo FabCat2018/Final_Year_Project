@@ -1,14 +1,28 @@
+**Index of Files Included**
+* Source Code Files:
+    * myapp
+    * web_scraper
+    * .gitignore
+    * db.sqlite3
+    * manage.py
+    * requirements.txt
+* Web App Architecture Diagram
+* Web App Wireframe Design
+* Original dataset used for recommender system: Amazon_Video_Games_Ratings.csv
+
+***As the system is an un-deployed web app, follow the instructions below to run the system***
+
 **How to Setup the Project**
-* Extract the ZIP file to the desired location
+* Extract the ZIP file's inner folder to the desired location
 * (Optional) Create a virtual Python environment
     * Install Anaconda (https://docs.anaconda.com/anaconda/install/)
-    * Run the following commands in the folder where the ZIP was extracted, using the Anaconda shell:
+    * Run the following commands in the folder where the content was extracted, using the Anaconda shell:
         * `conda create --name <name> python=3.7`
         * `conda activate <name>`
 
 **How to Run the Project**
 
-* *First time running the project*: Run the following commands using the shell in the folder the ZIP was extracted into:
+* *First time running the project*: Run the following commands using the shell in the folder the content was extracted into:
     * `pip install --upgrade pip`
     * `pip install -r requirements.txt`
 * Run the following command to start the local server: `python manage.py runserver`
@@ -24,6 +38,6 @@ https://zwbetz.com/download-chromedriver-binary-and-add-to-your-path-for-automat
 to setup the webdriver used for testing.
     * **Make sure the driver matches the version of Chrome your PC uses.**
 * Open a new Anaconda prompt and either access the virtual environment if virtual environment was used, or simply run
-`python manage.py test` in the folder where the ZIP was extracted
+`python manage.py test` in the folder where the content was extracted
 * Alternatively, to run the feature tests only, as these complete very quickly, run
 `python manage.py test web_scraper.tests.ProjectTests`
