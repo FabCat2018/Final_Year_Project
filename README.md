@@ -10,13 +10,15 @@
 * Web App Wireframe Design
 * Original dataset used for recommender system: Amazon_Video_Games_Ratings.csv
 
+***Source code can also be accessed at***: https://github.com/FabCat2018/Final_Year_Project
+
 ***As the system is an un-deployed web app, follow the instructions below to run the system***
 
 **How to Setup the Project**
 * Extract the ZIP file's inner folder to the desired location
 * (Optional) Create a virtual Python environment
     * Install Anaconda (https://docs.anaconda.com/anaconda/install/)
-    * Run the following commands in the folder where the content was extracted, using the Anaconda shell:
+    * Run the following commands in the folder directly containing manage.py using the Anaconda shell:
         * `conda create --name <name> python=3.7`
         * `conda activate <name>`
 
@@ -24,7 +26,7 @@
 
 * *First time running the project*: Run the following commands using the shell in the folder the content was extracted into:
     * `pip install --upgrade pip`
-    * `pip install -r requirements.txt`
+    * `pip install --user -r requirements.txt`
 * Run the following command to start the local server: `python manage.py runserver`
 * Open a Chrome browser and insert the following URL into the URL bar: 127.0.0.1:8000
 * Search for a game as desired using the search-bar

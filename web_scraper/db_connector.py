@@ -1,6 +1,6 @@
 import pyodbc
 
-_conn = pyodbc.connect("Driver={SQL Server};Server=DESKTOP-U3ATH6F;Database=Final Year Project;Trusted_Connection=yes;")
+_conn = pyodbc.connect("Driver={SQL Server};Server=tcp:DESKTOP-U3ATH6F,1433;Database=Final Year Project;Trusted_Connection=yes;")
 
 
 class DatabaseConnector:
